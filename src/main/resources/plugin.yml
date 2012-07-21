@@ -1,0 +1,205 @@
+name: RegionSelfService
+author: Mtihc
+description: Make regions and let new people become owner
+main: com.mtihc.minecraft.regionselfservice.RegionSelfServicePlugin
+depend: [WorldEdit, WorldGuard]
+softdepend: [Vault]
+version: 1.7
+commands:
+    selfservice:
+        description: For detailed information, execute /selfservice ?
+        usage: /selfservice ?
+        aliases: [regionss, ss, plot]
+permissions:
+    selfservice.admin:
+        default: op
+        description: All permissions
+        children:
+            selfservice.breakanysign: true
+            selfservice.worth: true
+            selfservice.info: true
+            selfservice.count: true
+            selfservice.rent: true
+            selfservice.rent.bypasscost: false
+            selfservice.buy: true
+            selfservice.bypassmaxregions: true
+            selfservice.buy.bypasscost: false
+            selfservice.create: true
+            selfservice.create.exact: true
+            selfservice.create.bypasscost: false
+            selfservice.create.anywhere: true
+            selfservice.create.anysize: true
+            selfservice.resize: true
+            selfservice.resize.anyregion: true
+            selfservice.remove: true
+            selfservice.remove.anyregion: true
+            selfservice.reload: true
+            selfservice.sell: true
+            selfservice.sell.anywhere: true
+            selfservice.sell.anyregion: true
+            selfservice.sell.forfree: true
+            selfservice.create-and-sell: true
+            selfservice.rentout: true
+            selfservice.rentout.anywhere: true
+            selfservice.rentout.anyregion: true
+            selfservice.rentout.forfree: true
+            selfservice.inform.owner.sold: true
+            selfservice.inform.owner.upforsale: true
+            selfservice.inform.member.sold: true
+            selfservice.inform.member.upforsale: true
+            selfservice.inform.owner.rented: true
+            selfservice.inform.owner.upforrent: true
+            selfservice.inform.member.rented: true
+            selfservice.inform.member.upforrent: true
+            selfservice.inform.owner.removed: true
+            selfservice.inform.member.removed: true
+            selfservice.inform.owner.resize: true
+            selfservice.inform.member.resize: true
+    selfservice.bypassmaxregions:
+        default: false
+        description: Allows you to create/buy more regions than defined in the config
+    selfservice.breakanysign:
+        default: false
+        description: Allows you to break any sign, even if you're not owner
+    selfservice.worth:
+        default: false
+        description: Allows you to get info about what a region is worth
+    selfservice.info:
+        default: false
+        description: Allows you to get info about a region
+    selfservice.count:
+        default: false
+        description: Allows you to see how many regions a player has
+    selfservice.rent:
+        default: false
+        description: Allows you to rent regions
+    selfservice.rent.bypasscost:
+        default: false
+        description: Allows you to bypass the cost of renting regions
+        children:
+            selfservice.rent: true
+    selfservice.buy:
+        default: false
+        description: Allows you to buy regions
+    selfservice.buy.bypasscost:
+        default: false
+        description: Allows you to bypass the cost of regions
+        children:
+            selfservice.buy: true
+    selfservice.create:
+        default: false
+        description: Allows you to make protected regions
+    selfservice.create.exact:
+        default: false
+        description: Allows you to make protected regions and override the default top-y and bottom-y.
+        children:
+            selfservice.create: true
+    selfservice.create.bypasscost:
+        default: false
+        description: Allows you to bypass the cost of defining regions
+        children:
+            selfservice.create: true
+    selfservice.create.anywhere:
+        default: false
+        description: Allows you to make protected regions, outside owned existing regions.
+        children:
+            selfservice.create: true
+    selfservice.create.anysize:
+        default: false
+        description: Allows you to make protected regions, of any size.
+        children:
+            selfservice.create: true
+    selfservice.resize:
+        default: false
+        description: Allows you to resize regions that you own
+    selfservice.resize.anyregion:
+        default: false
+        description: Allows you to resize any region
+        children:
+            selfservice.resize: true
+    selfservice.remove:
+        default: false
+        description: Allows you to delete regions that you own
+    selfservice.remove.anyregion:
+        default: false
+        description: Allows you to delete any region
+        children:
+            selfservice.remove: true
+    selfservice.reload:
+        default: false
+        description: Allows you to reload the configuration file
+    selfservice.sell:
+        default: false
+        description: Allows you to place sale signs that put a region up for sale
+    selfservice.sell.anywhere:
+        default: false
+        description: Allows you to place sale signs outside of the region
+        children:
+            selfservice.sell: true
+    selfservice.sell.anyregion:
+        default: false
+        description: Allows you to put regions, that you don't own, up for sale
+        children:
+            selfservice.sell: true
+    selfservice.sell.forfree:
+        default: false
+        description: Allows you to sell regions for free. Could be reserved for new players.
+        children:
+            selfservice.sell: true
+    selfservice.create-and-sell:
+        default: false
+        desciption: Allows access to the sell command, which creates a region and places a sign in one go.
+    selfservice.rentout:
+        default: false
+        description: Allows you to place signs that put a region up for sale
+    selfservice.rentout.anywhere:
+        default: false
+        description: Allows you to put regions, that you don't own, up for rent
+        children:
+            selfservice.rentout: true
+    selfservice.rentout.anyregion:
+        default: false
+        description: Allows you to sell regions you do not own
+        children:
+            selfservice.rentout: true
+    selfservice.rentout.forfree:
+        default: false
+        description: Allows you to sell regions for free
+        children:
+            selfservice.rentout: true
+    selfservice.inform.owner.sold:
+        default: false
+        description: Be informed when one of the regions you own, is sold
+    selfservice.inform.owner.upforsale:
+        default: false
+        description: Be informed when one of the regions you own, is put up for sale
+    selfservice.inform.member.sold:
+        default: false
+        description: Be informed when one of the regions that you are member of, is sold
+    selfservice.inform.member.upforsale:
+        default: false
+        description: Be informed when one of the regions that you are member of, is put up for sale
+    selfservice.inform.owner.rented:
+        default: false
+        description: Be informed when one of the regions you own, is rented out
+    selfservice.inform.owner.upforrent:
+        default: false
+        description: Be informed when one of the regions you own, is put up for rent
+    selfservice.inform.member.rented:
+        default: false
+        description: Be informed when one of the regions that you are member of, is rented out
+    selfservice.inform.member.upforrent:
+        default: false
+        description: Be informed when one of the regions that you are member of, is put up for rent
+    selfservice.inform.owner.removed:
+        default: false
+        description: Be informed when one of the regions that you own, is removed
+    selfservice.inform.member.removed:
+        default: false
+        description: Be informed when one of the regions that you are member of, is removed
+    selfservice.inform.owner.resize:
+        default: false
+        description: Be informed when one the regions that you own is resized
+    selfservice.inform.member.resize:
+        default: false
+        description: Be informed when one of the regions that you are member of is resized
