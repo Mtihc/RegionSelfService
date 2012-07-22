@@ -171,7 +171,7 @@ public class BuyCommand extends SimpleCommand {
 		}
 		
 		// maybe bypass cost, but owners still get the money
-		boolean bypassCost = sender.hasPermission(Permissions.BUY_BYPASSCOST);
+		boolean bypassCost = plugin.config().settings().enableBypasscost() && sender.hasPermission(Permissions.BUY_BYPASSCOST);
 		
 		// pay for region
 		if(!bypassCost) {

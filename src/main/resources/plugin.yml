@@ -4,7 +4,7 @@ description: Make regions and let new people become owner
 main: com.mtihc.minecraft.regionselfservice.RegionSelfServicePlugin
 depend: [WorldEdit, WorldGuard]
 softdepend: [Vault]
-version: 1.7
+version: 1.7.1
 commands:
     selfservice:
         description: For detailed information, execute /selfservice ?

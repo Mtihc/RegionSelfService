@@ -13,6 +13,12 @@ public class ConfigYaml extends YamlFile {
 		super(plugin, "config");
 	}
 
+	// ------------------------------
+	// permission problem workaround
+	// ------------------------------
+	public boolean enableBypasscost() {
+		return getConfig().getBoolean("enable-permission.bypasscost", true);
+	}
 
 	public List<String> getFirstLineForRent() {
 		return getConfig().getStringList("firstLineForRent");

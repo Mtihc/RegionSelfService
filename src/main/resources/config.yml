@@ -62,6 +62,8 @@
 #   maxBlockCost:         What is the maximum price for each block in a region, per time unit
 #   maxHours:             What is the maximum amount of hours that a region can be rented for
 # 
+# enable-permission.bypasscost: For the people that have permission problems
+# 
 firstLineForSale:
   - For Sale
 firstLineForRent:
@@ -97,3 +99,5 @@ onRent:
   minBlockCost: 0.002
   maxBlockCost: 0.005
   maxHours: 24
+enable-permission:
+  bypasscost: true
