@@ -21,6 +21,7 @@ public abstract class PlotManager {
 	protected final Map<String, PlotWorld> worlds;
 	protected final ISignValidator signValidator;
 	protected final IPlotPermission perms;
+	protected final PlotControl control;
 	
 	
 
@@ -32,6 +33,7 @@ public abstract class PlotManager {
 		this.worlds = new HashMap<String, PlotWorld>();
 		this.signValidator = signValidator;
 		this.perms = perms;
+		this.control = new PlotControl(this);
 		
 		Listener listener = new PlotListener(this);
 		Bukkit.getPluginManager().registerEvents(listener, plugin);
@@ -82,5 +84,9 @@ public abstract class PlotManager {
 	
 	public IPlotPermission getPermissions() {
 		return perms;
+	}
+	
+	public PlotControl getControl() {
+		return control;
 	}
 }
