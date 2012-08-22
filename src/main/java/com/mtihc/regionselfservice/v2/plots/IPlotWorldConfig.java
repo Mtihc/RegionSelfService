@@ -2,14 +2,16 @@ package com.mtihc.regionselfservice.v2.plots;
 
 public interface IPlotWorldConfig {
 
-	public double getBlockWorth();
+	public abstract String getWorldName();
 	
-	public double getOnSellMinBlockCost();
+	public abstract double getBlockWorth();
 	
-	public double getOnSellMaxBlockCost();
+	public abstract double getOnSellMinBlockCost();
 	
-	public double getOnRentMinBlockCost();
+	public abstract double getOnSellMaxBlockCost();
 	
-	public double getOnRentMaxBlockCost();
+	public abstract double getOnRentMinBlockCost();
+	
+	public abstract double getOnRentMaxBlockCost();
 	
 }

@@ -8,9 +8,11 @@ public interface IPlotPermission {
 		RENTOUT,
 		RENTOUT_ANYREGION,
 		RENTOUT_ANYWHERE,
+		RENTOUT_FOR_FREE,
 		SELL,
 		SELL_ANYREGION,
-		SELL_ANYWHERE;
+		SELL_ANYWHERE,
+		SELL_FOR_FREE;
 	}
 	
 	public abstract String getPermission(PlotAction action);

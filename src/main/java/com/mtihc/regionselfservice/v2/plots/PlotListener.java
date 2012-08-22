@@ -23,11 +23,11 @@ import com.mtihc.regionselfservice.v2.plots.data.SignType;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
-public class PlotListener implements Listener {
+class PlotListener implements Listener {
 
 	private PlotManager mgr;
 
-	public PlotListener(PlotManager mgr) {
+	PlotListener(PlotManager mgr) {
 		this.mgr = mgr;
 	}
 	
@@ -123,6 +123,8 @@ public class PlotListener implements Listener {
 				return;
 			}
 			
+			
+			
 			SignForRent rentSign = (SignForRent) plotSign;
 			double rentCost = rentSign.getCostPerHour();
 			// TODO check if there was no cost, then we need to set the cost automatically using existing signs
@@ -143,6 +145,15 @@ public class PlotListener implements Listener {
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
 				return;
+			}
+			
+			if(rentCost == 0) {
+				if(!player.hasPermission(perms.getPermission(PlotAction.RENTOUT_FOR_FREE))) {
+					player.sendMessage(ChatColor.RED + "You don't have permission to rent out regions for free.");
+					event.setCancelled(true);
+					sign.getBlock().breakNaturally();
+					return;
+				}
 			}
 
 			// TODO check if the cost is different, 
@@ -201,6 +212,15 @@ public class PlotListener implements Listener {
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
 				return;
+			}
+			
+			if(sellCost == 0) {
+				if(!player.hasPermission(perms.getPermission(PlotAction.SELL_FOR_FREE))) {
+					player.sendMessage(ChatColor.RED + "You don't have permission to sell regions for free.");
+					event.setCancelled(true);
+					sign.getBlock().breakNaturally();
+					return;
+				}
 			}
 			
 			// TODO check if the cost is different,

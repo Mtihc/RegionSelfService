@@ -14,13 +14,13 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 
 public abstract class PlotManager {
 
-	private JavaPlugin plugin;
-	private WorldGuardPlugin worldGuard;
-	private IEconomy economy;
-	private IPlotManagerConfig config;
-	private Map<String, PlotWorld> worlds;
-	private ISignValidator signValidator;
-	private IPlotPermission perms;
+	protected final JavaPlugin plugin;
+	protected final WorldGuardPlugin worldGuard;
+	protected final IEconomy economy;
+	protected final IPlotManagerConfig config;
+	protected final Map<String, PlotWorld> worlds;
+	protected final ISignValidator signValidator;
+	protected final IPlotPermission perms;
 	
 	
 

@@ -30,7 +30,7 @@ public class Plot extends PlotData {
 	}
 	
 	public void save() {
-		plotWorld.plots.set(this);
+		plotWorld.plots.set(getRegionId(), this);
 	}
 	
 	public void delete() {
