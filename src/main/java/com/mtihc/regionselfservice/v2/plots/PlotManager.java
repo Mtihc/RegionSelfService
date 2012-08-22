@@ -17,16 +17,21 @@ public abstract class PlotManager {
 	private JavaPlugin plugin;
 	private WorldGuardPlugin worldGuard;
 	private IEconomy economy;
+	private IPlotManagerConfig config;
 	private Map<String, PlotWorld> worlds;
 	private ISignValidator signValidator;
+	private IPlotPermission perms;
+	
 	
 
-	public PlotManager(JavaPlugin plugin, WorldGuardPlugin worldGuard, IEconomy economy, ISignValidator signValidator) {
+	public PlotManager(JavaPlugin plugin, WorldGuardPlugin worldGuard, IEconomy economy, IPlotManagerConfig config, ISignValidator signValidator, IPlotPermission perms) {
 		this.plugin = plugin;
 		this.worldGuard = worldGuard;
 		this.economy = economy;
+		this.config = config;
 		this.worlds = new HashMap<String, PlotWorld>();
 		this.signValidator = signValidator;
+		this.perms = perms;
 		
 		Listener listener = new PlotListener(this);
 		Bukkit.getPluginManager().registerEvents(listener, plugin);
@@ -59,6 +64,10 @@ public abstract class PlotManager {
 		return economy;
 	}
 	
+	public IPlotManagerConfig getConfig() {
+		return config;
+	}
+	
 	public PlotWorld getPlotWorld(String name) {
 		return worlds.get(name);
 	}
@@ -69,5 +78,9 @@ public abstract class PlotManager {
 	
 	public ISignValidator getSignValidator() {
 		return signValidator;
+	}
+	
+	public IPlotPermission getPermissions() {
+		return perms;
 	}
 }

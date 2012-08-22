@@ -16,9 +16,12 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import com.mtihc.regionselfservice.v2.plots.IPlotPermission.PlotAction;
 import com.mtihc.regionselfservice.v2.plots.data.ISignData;
 import com.mtihc.regionselfservice.v2.plots.data.PlotData;
+import com.mtihc.regionselfservice.v2.plots.data.SignType;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public class PlotListener implements Listener {
 
@@ -45,6 +48,8 @@ public class PlotListener implements Listener {
 		// plot world
 		PlotWorld plotWorld = mgr.getPlotWorld(sign.getWorld().getName());
 		
+		// player
+		Player player = event.getPlayer();
 		
 		Plot plot;
 		ISignData plotSign;
@@ -65,24 +70,152 @@ public class PlotListener implements Listener {
 			
 		} catch (SignException e) {
 			// invalid sign
-			event.getPlayer().sendRawMessage(ChatColor.RED + "Failed to create plot-sign: " + e.getMessage());
+			player.sendMessage(ChatColor.RED + "Failed to create plot-sign: " + e.getMessage());
 			// break the sign
 			event.setCancelled(true);
 			sign.getBlock().breakNaturally();
 			return;
 		}
 		
+		
+		ProtectedRegion region = plot.getRegion();
+		if(region == null) {
+			player.sendMessage(ChatColor.RED + "Failed to create plot-sign. Region \"" + plotSign.getRegionId() + "\" doesn't exist.");
+			event.setCancelled(true);
+			sign.getBlock().breakNaturally();
+			return;
+		}
+		
+		boolean isOwner = region.isOwner(player.getName());
+		boolean isInside = region.contains(sign.getX(), sign.getY(), sign.getZ());
+		
+		IPlotPermission perms = mgr.getPermissions();
+		
+		SignType type = plotSign.getSignType();
+		
+		IPlotWorldConfig config = plot.getPlotWorld().getConfig();
+		
+		switch(type) {
+		case FOR_RENT:
+			
+			
+			
+			if(!player.hasPermission(perms.getPermission(PlotAction.RENTOUT))) {
+				player.sendMessage(ChatColor.RED + "You don't have permission to rent out regions.");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			
+			if(!isOwner && !player.hasPermission(
+					perms.getPermission(PlotAction.RENTOUT_ANYREGION))) {
+				player.sendMessage(ChatColor.RED + "You can't rent out regions that you don't own.");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			
+			if(!isInside && !player.hasPermission(
+					perms.getPermission(PlotAction.RENTOUT_ANYWHERE))) {
+				player.sendMessage(ChatColor.RED + "You can't place this sign outside the region itself.");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			
+			SignForRent rentSign = (SignForRent) plotSign;
+			double rentCost = rentSign.getCostPerHour();
+			// TODO check if there was no cost, then we need to set the cost automatically using existing signs
+			
+			// check min/max cost
+			double minRentCost = plot.getWorth(config.getOnRentMinBlockCost());
+			double maxRentCost = plot.getWorth(config.getOnRentMaxBlockCost());
+			if(rentCost < minRentCost) {
+				player.sendMessage(ChatColor.RED + "The price is too low.");
+				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			else if(rentCost > maxRentCost) {
+				player.sendMessage(ChatColor.RED + "The price is high.");
+				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+
+			// TODO check if the cost is different, 
+			// then we need to set the cost on all other signs
+			// (that have no renter)
+			
+			
+			break;
+		case FOR_SALE:
+			if(!player.hasPermission(perms.getPermission(PlotAction.SELL))) {
+				player.sendMessage(ChatColor.RED + "You don't have permission to sell regions.");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			
+			// TODO count regions of all owners
+			// You can't sell a player's last region, 
+			// (if free regions are reserved for players with no regions || configured no homeless)
+			// because players would be able to work together, to mess up your server
+			// send message: "You can't sell this region because the following players would be homeless."
+			
+			if(!isOwner && !player.hasPermission(
+					perms.getPermission(PlotAction.SELL_ANYREGION))) {
+				player.sendMessage(ChatColor.RED + "You can't sell regions that you don't own.");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			
+			if(!isInside && !player.hasPermission(
+					perms.getPermission(PlotAction.SELL_ANYWHERE))) {
+				player.sendMessage(ChatColor.RED + "You can't place this sign outside the region itself.");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			
+			SignForSale sellSign = (SignForSale) plotSign;
+			double sellCost = sellSign.getCost();
+			// TODO check if there was no cost, then we need to set the cost automatically using existing signs
+			
+			// check min/max cost
+			double minSellCost = plot.getWorth(config.getOnSellMinBlockCost());
+			double maxSellCost = plot.getWorth(config.getOnSellMaxBlockCost());
+			if(sellCost < minSellCost) {
+				player.sendMessage(ChatColor.RED + "The price is too low.");
+				player.sendMessage(ChatColor.RED + "The sell-cost must be between " + mgr.getEconomy().format(minSellCost) + " and " + mgr.getEconomy().format(maxSellCost) + ".");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			else if(sellCost > maxSellCost) {
+				player.sendMessage(ChatColor.RED + "The price is high.");
+				player.sendMessage(ChatColor.RED + "The sell-cost must be between " + mgr.getEconomy().format(minSellCost) + " and " + mgr.getEconomy().format(maxSellCost) + ".");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
+			
+			// TODO check if the cost is different,
+			// then we need to set the cost on all other signs
+			
+			
+			break;
+		default:
+			break;
+		}
+		
 		// TODO plot-sign change event, synced
 		// event includes Sign, ISign, Plot, Player
 		// 
-		// TODO check permissions,
-		// - sell/rent perms
-		// - anywhere perms
-		// - anyregion perms
-		// 
-		// - check min/max cost
-		// 	
-		// TODO if (event is cancelled) don't save plot
+		// if (event is cancelled) don't save plot and break sign
 		
 		plot.setSign(plotSign);
 		plot.save();
@@ -133,7 +266,11 @@ public class PlotListener implements Listener {
 			return;
 		}
 		
-		// TODO send plot info (and sell-info or rent-info)
+
+		// TODO plot-sign info event, synced
+		// event includes Sign, ISign, Plot, Player and list of messages
+		
+		// send plot info using messages from event
 		
 		event.setCancelled(true);
 	}
@@ -153,6 +290,7 @@ public class PlotListener implements Listener {
 			return;// event cancelled
 		}
 		if(!(block.getState() instanceof Sign)) {
+			// TODO check if there's a sign attached to this block
 			return;// not a sign
 		}
 		Sign sign = (Sign) block.getState();
@@ -179,12 +317,30 @@ public class PlotListener implements Listener {
 			return;
 		}
 		
+		ProtectedRegion region = plot.getRegion();
+		if(region == null) {
+			// region doesn't exist anymore
+			// let it break
+			return;
+		}
+		
 		if(event instanceof BlockBreakEvent) {
 			BlockBreakEvent e = (BlockBreakEvent) event;
 			Player player = e.getPlayer();
-			// TODO check region-ownership || perm break-any
-			// protect the sign
-			event.setCancelled(true);
+			
+			// check region ownership || permission break-any
+			boolean isOwner = region.isOwner(player.getName());
+			String breakAny = mgr.getPermissions().getPermission(PlotAction.BREAK_ANY_SIGN);
+			if(!isOwner && !player.hasPermission(breakAny)) {
+				// not an owner, and no special permission
+				player.sendMessage(ChatColor.RED + "You don't own this region.");
+				// protect the sign
+				event.setCancelled(true);
+				return;
+			}
+			else {
+				// TODO send info: "You broke a plot-sign, this many signs are left"
+			}
 		}
 		else {
 			// protect the sign

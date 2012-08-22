@@ -48,6 +48,26 @@ public class Plot extends PlotData {
 	public ProtectedRegion getRegion() {
 		return plotWorld.getRegionManager().getRegion(getRegionId());
 	}
+	
+	public double getWorth() {
+		double blockWorth = plotWorld.getConfig().getBlockWorth();
+		return getWorth(blockWorth);
+	}
+	
+	public double getWorth(double blockWorth) {
+		ProtectedRegion region = getRegion();
+		if(region == null) {
+			return 0;
+		}
+		
+		int width = region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX();
+		width = Math.abs(width);
+		
+		int length = region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ();
+		length = Math.abs(length);
+		
+		return width * length * blockWorth;
+	}
 
 	protected ISign createPlotSign(ISignData data) {
 		if(data instanceof SignDataForSale) {
