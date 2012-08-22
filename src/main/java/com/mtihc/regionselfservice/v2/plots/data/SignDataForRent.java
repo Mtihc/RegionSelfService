@@ -13,12 +13,12 @@ public class SignDataForRent extends SignData {
 
 	
 	public SignDataForRent(SignDataForRent other) {
-		this(other.getBlockVector(), other.getAttachedFace(), other.getCostPerHour());
+		this(other.getBlockVector(), other.getAttachedFace(), other.getRegionId(), other.getCostPerHour());
 	}
 	
 	public SignDataForRent(BlockVector coords,
-			BlockFace attachedFace, double costPerHour) {
-		super(SignType.FOR_RENT, coords, attachedFace);
+			BlockFace attachedFace, String regionId, double costPerHour) {
+		super(SignType.FOR_RENT, coords, attachedFace, regionId);
 		this.renter = null;
 		this.timeLeft = 0;
 		this.costPerHour = costPerHour;

@@ -7,16 +7,18 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.util.BlockVector;
 
 public class SignData implements ISignData {
-	
+
+	protected final SignType type;
 	private BlockVector blockVector;
 	private BlockFace attachedFace;
-	protected final SignType type;
+	private String regionId;
 	
 
-	public SignData(SignType type, BlockVector coords, BlockFace attachedFace) {
+	public SignData(SignType type, BlockVector coords, BlockFace attachedFace, String regionId) {
 		this.type = type;
 		this.blockVector = coords;
 		this.attachedFace = attachedFace;
+		this.regionId = regionId;
 	}
 	
 	
@@ -29,7 +31,7 @@ public class SignData implements ISignData {
 		this.blockVector = (BlockVector) values.get("coords");
 		this.attachedFace = BlockFace.valueOf(
 				(String) values.get("attached-face"));
-		
+		this.regionId = (String) values.get("region");
 		
 	}
 
@@ -39,6 +41,7 @@ public class SignData implements ISignData {
 		values.put("type", type.name());
 		values.put("coords", blockVector);
 		values.put("attached-face", attachedFace.name());
+		values.put("region", regionId);
 		return values;
 	}
 	
@@ -68,6 +71,14 @@ public class SignData implements ISignData {
 	@Override
 	public SignType getSignType() {
 		return type;
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.mtihc.regionselfservice.v2.plots.data.ISignData#getRegionId()
+	 */
+	@Override
+	public String getRegionId() {
+		return regionId;
 	}
 
 }

@@ -17,8 +17,8 @@ public class SignForSale extends SignDataForSale implements ISign {
 	private World world;
 
 	public SignForSale(Plot plot, BlockVector coords,
-			BlockFace attachedFace, double cost) {
-		this(plot, new SignDataForSale(coords, attachedFace, cost));
+			BlockFace attachedFace, String regionId, double cost) {
+		this(plot, new SignDataForSale(coords, attachedFace, regionId, cost));
 	}
 	
 	public SignForSale(Plot plot, SignDataForSale data) {

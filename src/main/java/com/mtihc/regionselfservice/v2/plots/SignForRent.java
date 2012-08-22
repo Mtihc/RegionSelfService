@@ -17,8 +17,8 @@ public class SignForRent extends SignDataForRent implements ISign {
 	private World world;
 
 	public SignForRent(Plot plot, BlockVector coords, 
-			BlockFace attachedFace, double costPerHour) {
-		this(plot, new SignDataForRent(coords, attachedFace, costPerHour));
+			BlockFace attachedFace, String regionId, double costPerHour) {
+		this(plot, new SignDataForRent(coords, attachedFace, regionId, costPerHour));
 	}
 	
 	public SignForRent(Plot plot, SignDataForRent data) {

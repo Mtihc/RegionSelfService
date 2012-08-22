@@ -11,5 +11,7 @@ public interface ISignData extends ConfigurationSerializable {
 	public abstract BlockFace getAttachedFace();
 
 	public abstract SignType getSignType();
+	
+	public abstract String getRegionId();
 
 }

@@ -10,11 +10,11 @@ public class SignDataForSale extends SignData {
 	private double cost;
 
 	public SignDataForSale(SignDataForSale other) {
-		this(other.getBlockVector(), other.getAttachedFace(), other.getCost());
+		this(other.getBlockVector(), other.getAttachedFace(), other.getRegionId(), other.getCost());
 	}
 	
-	public SignDataForSale(BlockVector coords, BlockFace attachedFace, double cost) {
-		super(SignType.FOR_SALE, coords, attachedFace);
+	public SignDataForSale(BlockVector coords, BlockFace attachedFace, String regionId, double cost) {
+		super(SignType.FOR_SALE, coords, attachedFace, regionId);
 		this.cost = cost;
 	}
 

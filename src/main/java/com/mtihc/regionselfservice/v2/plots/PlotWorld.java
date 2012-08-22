@@ -1,8 +1,11 @@
 package com.mtihc.regionselfservice.v2.plots;
 
 import org.bukkit.World;
+import org.bukkit.block.Sign;
 
+import com.mtihc.regionselfservice.v2.plots.data.ISignData;
 import com.mtihc.regionselfservice.v2.plots.data.PlotData;
+import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 
 public class PlotWorld {
@@ -48,6 +51,14 @@ public class PlotWorld {
 			return null;
 		}
 		return createPlot(data);
+	}
+	
+	public Plot getPlot(Sign sign) throws SignException {
+		ISignData data = manager.getSignValidator().createPlotSign(sign);
+		if(data == null) {
+			return null;
+		}
+		return getPlot(data.getRegionId());
 	}
 	
 	protected Plot createPlot(PlotData data) {
