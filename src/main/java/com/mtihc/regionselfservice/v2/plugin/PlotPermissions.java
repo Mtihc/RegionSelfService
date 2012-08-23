@@ -10,7 +10,12 @@ public class PlotPermissions implements IPlotPermission {
 	private Map<PlotAction, String> perms = new HashMap<PlotAction, String>();
 	
 	public PlotPermissions() {
-		perms.put(PlotAction.BREAK_ANY_SIGN, "selfservice.break-any-sign");
+		perms.put(PlotAction.BREAK_ANY_SIGN, "selfservice.breakanysign");
+		perms.put(PlotAction.BYPASS_BUY_COST, "selfservice.buy.bypasscost");
+		perms.put(PlotAction.BYPASS_CREATE_COST, "selfservice.create.bypasscost");
+		perms.put(PlotAction.BYPASS_MAX_REGIONS, "selfservice.bypassmaxregions");
+		perms.put(PlotAction.CREATE_ANYSIZE, "selfservice.craete.anysize");
+		perms.put(PlotAction.CREATE_ANYWHERE, "selfservice.create.anywhere");
 		perms.put(PlotAction.RENTOUT, "selfservice.rentout");
 		perms.put(PlotAction.RENTOUT_ANYREGION, "selfservice.rentout.anyregion");
 		perms.put(PlotAction.RENTOUT_ANYWHERE, "selfservice.rentout.anywhere");
