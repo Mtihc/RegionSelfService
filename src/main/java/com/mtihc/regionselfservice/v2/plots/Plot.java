@@ -56,17 +56,7 @@ public class Plot extends PlotData {
 	
 	public double getWorth(double blockWorth) {
 		ProtectedRegion region = getRegion();
-		if(region == null) {
-			return 0;
-		}
-		
-		int width = region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX();
-		width = Math.abs(width);
-		
-		int length = region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ();
-		length = Math.abs(length);
-		
-		return width * length * blockWorth;
+		return PlotControl.getWorth(region, blockWorth);
 	}
 
 	protected ISign createPlotSign(ISignData data) {
