@@ -472,22 +472,72 @@ public class PlotControl {
 	}
 	
 	public void sendRegionCount(CommandSender sender, OfflinePlayer owner, World world) {
-		// TODO
+		int count = getRegionCountOfPlayer(world, owner.getName());
+
+		String countString = String.valueOf(count);
+		if (count < mgr.getPlotWorld(world.getName()).getConfig().getMaxRegionCount()) {
+			countString = ChatColor.WHITE + countString;
+		} else {
+			countString = ChatColor.RED + countString;
+		}
+		
+		sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + "'"
+				+ owner.getName() + "'" + ChatColor.GREEN + " owns "
+				+ countString + ChatColor.GREEN + " regions in world "
+				+ ChatColor.WHITE + "'" + world.getName() + "'"
+				+ ChatColor.GREEN + ".");
+		
+		
 	}
 	
-	public void sendWorth(CommandSender sender, String regionId) {
-		// TODO
+	public void sendWorth(CommandSender sender, String regionId, World world) {
+		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
+		RegionManager regionManager = plotWorld.getRegionManager();
+		ProtectedRegion region = regionManager.getRegion(regionId);
+		if(region == null) {
+			sender.sendMessage(ChatColor.RED + "Region '" + regionId + "' doesn't exist in world '" + world.getName() + "'.");
+			return;
+		}
+		
+		int width = Math.abs(region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
+		int length = Math.abs(region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ()) + 1;
+		sender.sendMessage(ChatColor.GREEN + "Region " + ChatColor.WHITE + region.getId() + ChatColor.GREEN + " with a size of "
+				+ ChatColor.WHITE + String.valueOf(width) + "x"
+				+ String.valueOf(length) + ChatColor.GREEN + " blocks, in world \"" + world.getName() + "\" ");
+		double cost = getWorth(width, length, plotWorld.getConfig().getBlockWorth());
+		sender.sendMessage(ChatColor.GREEN + "is worth about "
+				+ ChatColor.WHITE + mgr.getEconomy().format(cost)
+				+ ChatColor.GREEN + ", based on the region's size.");
 	}
 	
-	public void sendWorth(CommandSender sender, int width, int length) {
-		// TODO
+	public void sendWorth(CommandSender sender, int width, int length, World world) {
+		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
+		double cost = getWorth(width, length, plotWorld.getConfig().getBlockWorth());
+		sender.sendMessage(ChatColor.GREEN + "For a region with a size of "
+				+ ChatColor.WHITE + String.valueOf(width) + "x"
+				+ String.valueOf(length) + ChatColor.GREEN + " blocks, in world \"" + world.getName() + "\" ");
+		sender.sendMessage(ChatColor.GREEN + "you would pay about "
+				+ ChatColor.WHITE + mgr.getEconomy().format(cost)
+				+ ChatColor.GREEN + ".");
 	}
 	
-	public void sendWorth(Player player, double money) {
-		// TODO
+	public void sendWorth(CommandSender sender, double money, World world) {
+		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
+		int size = getSizeByWorth(money, plotWorld.getConfig().getBlockWorth());
+		sender.sendMessage(ChatColor.GREEN + "For " + ChatColor.WHITE
+				+ mgr.getEconomy().format(money) + ChatColor.GREEN + ", ");
+		sender.sendMessage(ChatColor.GREEN
+				+ "you can get a region with a size of about "
+				+ ChatColor.WHITE + String.valueOf(size) + "x"
+				+ String.valueOf(size) + ChatColor.GREEN + " blocks, in world \"" + world.getName() + "\".");
 	}
+	
 	
 
+	public static int getSizeByWorth(double money, double blockWorth) {
+		return (int) Math.sqrt(money / blockWorth);
+	}
+	
 	
 	public static double getWorth(ProtectedRegion region, double blockWorth) {
 		if(region == null) {
@@ -495,10 +545,10 @@ public class PlotControl {
 		}
 		
 		int width = region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX();
-		width = Math.abs(width);
+		width = Math.abs(width) + 1;
 		
 		int length = region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ();
-		length = Math.abs(length);
+		length = Math.abs(length) + 1;
 		
 		return getWorth(width, length, blockWorth);
 	}
