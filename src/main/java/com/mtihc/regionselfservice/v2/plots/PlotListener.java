@@ -2,6 +2,7 @@ package com.mtihc.regionselfservice.v2.plots;
 
 import java.util.Iterator;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -19,6 +20,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import com.mtihc.regionselfservice.v2.plots.IPlotPermission.PlotAction;
 import com.mtihc.regionselfservice.v2.plots.data.ISignData;
 import com.mtihc.regionselfservice.v2.plots.data.PlotData;
+import com.mtihc.regionselfservice.v2.plots.data.SignDataForRent;
+import com.mtihc.regionselfservice.v2.plots.data.SignDataForSale;
 import com.mtihc.regionselfservice.v2.plots.data.SignType;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -41,7 +44,8 @@ class PlotListener implements Listener {
 		}
 		
 		Sign sign = (Sign) event.getBlock().getState();
-		if(!mgr.getSignValidator().isPlotSign(sign)) {
+		if(!mgr.getSignValidator().isPlotSign(sign, event.getLines())) {
+			Bukkit.getLogger().info("not a plot sign!");
 			return;// not a plot-sign
 		}
 		
@@ -56,7 +60,8 @@ class PlotListener implements Listener {
 		
 		try {
 			// create sign data
-			plotSign = mgr.getSignValidator().createPlotSign(sign);
+			plotSign = mgr.getSignValidator().createPlotSign(sign, event.getLines());
+			
 			// get plot data
  			plot = plotWorld.getPlot(plotSign.getRegionId());
 			if(plot == null) {
@@ -65,12 +70,19 @@ class PlotListener implements Listener {
 				PlotData plotData = new PlotData(sign.getWorld(), plotSign.getRegionId());
 				plot = plotWorld.createPlot(plotData);
 			}
+			if(plotSign instanceof SignDataForRent) {
+				plotSign = new SignForRent(plot, (SignDataForRent) plotSign);
+			}
+			else if(plotSign instanceof SignDataForSale) {
+				plotSign = new SignForSale(plot, (SignDataForSale) plotSign);
+			}
 			// add sign to plot data
 			plot.setSign(plotSign);
 			
 		} catch (SignException e) {
 			// invalid sign
-			player.sendMessage(ChatColor.RED + "Failed to create plot-sign: " + e.getMessage());
+			player.sendMessage(ChatColor.RED + "Failed to create selfservice-sign: ");
+			player.sendMessage(ChatColor.RED + e.getMessage());
 			// break the sign
 			event.setCancelled(true);
 			sign.getBlock().breakNaturally();
@@ -80,7 +92,8 @@ class PlotListener implements Listener {
 		
 		ProtectedRegion region = plot.getRegion();
 		if(region == null) {
-			player.sendMessage(ChatColor.RED + "Failed to create plot-sign. Region \"" + plotSign.getRegionId() + "\" doesn't exist.");
+			player.sendMessage(ChatColor.RED + "Failed to create selfservice-sign. ");
+			player.sendMessage(ChatColor.RED + "Region \"" + plotSign.getRegionId() + "\" doesn't exist.");
 			event.setCancelled(true);
 			sign.getBlock().breakNaturally();
 			return;
@@ -253,7 +266,7 @@ class PlotListener implements Listener {
 			return;// not a sign
 		}
 		Sign sign = (Sign) event.getClickedBlock().getState();
-		if(!mgr.getSignValidator().isPlotSign(sign)) {
+		if(!mgr.getSignValidator().isPlotSign(sign, sign.getLines())) {
 			return;// not a plot-sign
 		}
 		
@@ -315,14 +328,14 @@ class PlotListener implements Listener {
 		}
 		Sign sign = (Sign) block.getState();
 		
-		if(!mgr.getSignValidator().isPlotSign(sign)) {
+		if(!mgr.getSignValidator().isPlotSign(sign, sign.getLines())) {
 			return;// not a plot-sign
 		}
 		
 		
 		ISignData data;
 		try {
-			data = mgr.getSignValidator().createPlotSign(sign);
+			data = mgr.getSignValidator().createPlotSign(sign, sign.getLines());
 		} catch (SignException e) {
 			// invalid sign, let it break
 			return;

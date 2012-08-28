@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import net.milkbowl.vault.economy.Economy;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -16,12 +17,15 @@ import com.mtihc.regionselfservice.v2.plots.IEconomy;
 import com.mtihc.regionselfservice.v2.plots.IPlotPermission;
 import com.mtihc.regionselfservice.v2.plots.ISignValidator;
 import com.mtihc.regionselfservice.v2.plots.PlotManager;
+import com.mtihc.regionselfservice.v2.plugin.util.commands.CommandException;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 
 public class SelfServicePlugin extends JavaPlugin {
 	
 	
 	private PlotManager manager;
+	private PlotCommand cmd;
+	private PlotManagerConfig config;
 	
 	public PlotManager getManager() {
 		return manager;
@@ -30,15 +34,6 @@ public class SelfServicePlugin extends JavaPlugin {
 	
 	
 	
-	
-	/* (non-Javadoc)
-	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
-	 */
-	@Override
-	public void onDisable() {
-		// TODO Auto-generated method stub
-		super.onDisable();
-	}
 	
 	/* (non-Javadoc)
 	 * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
@@ -64,7 +59,8 @@ public class SelfServicePlugin extends JavaPlugin {
 		
 		IEconomy economy = new EconomyVault(vault, getLogger());
 		
-		PlotManagerConfig config = new PlotManagerConfig(this, "config");
+		this.config = new PlotManagerConfig(this, "config");
+		config.reload();
 		
 		ISignValidator signValidator = new SignValidator(
 				config.getFirstLineForRent(), 
@@ -73,6 +69,8 @@ public class SelfServicePlugin extends JavaPlugin {
 		IPlotPermission perms = new PlotPermissions();
 		
 		this.manager = new SelfServiceManager(this, worldGuard, economy, config, signValidator, perms);
+		
+		this.cmd = new PlotCommand(manager, null, new String[]{"plot", "ss", "selfservice"});
 	}
 	
 	
@@ -85,8 +83,35 @@ public class SelfServicePlugin extends JavaPlugin {
 	@Override
 	public boolean onCommand(CommandSender sender, Command command,
 			String label, String[] args) {
-		// TODO Auto-generated method stub
-		return super.onCommand(sender, command, label, args);
+		
+		String lbl = label.toLowerCase();
+		if(cmd.getLabel().equals(lbl) || cmd.getAliases().contains(lbl)) {
+			
+			try {
+				// try to execute command
+				cmd.execute(sender, args);
+			} catch (CommandException e) {
+				
+				// send error messages
+				Throwable error = e;
+				while(error != null && error instanceof CommandException) {
+					sender.sendMessage(ChatColor.RED + error.getMessage());
+					error = error.getCause();
+				}
+				
+				// show what the player typed
+				String echo = "/" + label;
+				for (int i = 0; i < args.length; i++) {
+					echo += " " + args[i];
+				}
+				sender.sendMessage(echo);
+			}
+			return true;
+		}
+		else {
+			// we don't know that command label
+			return false;
+		}
 	}
 	
 	
@@ -98,8 +123,7 @@ public class SelfServicePlugin extends JavaPlugin {
 	 */
 	@Override
 	public FileConfiguration getConfig() {
-		// TODO Auto-generated method stub
-		return super.getConfig();
+		return config.getConfig();
 	}
 
 	/* (non-Javadoc)
@@ -107,8 +131,7 @@ public class SelfServicePlugin extends JavaPlugin {
 	 */
 	@Override
 	public void reloadConfig() {
-		// TODO Auto-generated method stub
-		super.reloadConfig();
+		config.reload();
 	}
 
 	/* (non-Javadoc)
@@ -116,8 +139,7 @@ public class SelfServicePlugin extends JavaPlugin {
 	 */
 	@Override
 	public void saveConfig() {
-		// TODO Auto-generated method stub
-		super.saveConfig();
+		config.save();
 	}
 	
 	

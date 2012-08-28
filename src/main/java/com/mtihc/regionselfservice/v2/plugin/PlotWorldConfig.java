@@ -15,6 +15,7 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 	public PlotWorldConfig(JavaPlugin plugin, File dir, String worldName) {
 		super(plugin, dir + "/" + worldName + ".yml");
 		this.worldName = worldName;
+		reload();
 	}
 	
 	@Override

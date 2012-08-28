@@ -2,6 +2,7 @@ package com.mtihc.regionselfservice.v2.plugin;
 
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.util.BlockVector;
@@ -21,14 +22,23 @@ public class SignValidator implements ISignValidator {
 	public SignValidator(List<String> firstLinesForRent, List<String> firstLinesForSale) {
 		this.firstLinesForRent = firstLinesForRent;
 		this.firstLinesForSale = firstLinesForSale;
+		Bukkit.getLogger().info(firstLinesForRent + " " + firstLinesForSale);
 	}
 
 	@Override
-	public boolean isPlotSign(Sign sign) {
+	public boolean isPlotSign(Sign sign, String[] lines) {
 		if(sign == null) {
 			return false;
 		}
-		String firstLine = sign.getLine(0);
+		String firstLine;
+		try {
+			firstLine = lines[0];
+		} catch(Exception e) {
+			firstLine = "";
+		}
+		
+		Bukkit.getLogger().info("firstLine is \"" + firstLine + "\"");
+		Bukkit.getLogger().info(" " + firstLinesForSale);
 		for (String line : firstLinesForRent) {
 			if(line.equalsIgnoreCase(firstLine)) {
 				return true;
@@ -43,13 +53,18 @@ public class SignValidator implements ISignValidator {
 	}
 
 	@Override
-	public ISignData createPlotSign(Sign sign) throws SignException {
+	public ISignData createPlotSign(Sign sign, String[] lines) throws SignException {
 		if(sign == null) {
 			return null;
 		}
 		
 		SignType type = null;
-		String firstLine = sign.getLine(0);
+		String firstLine;
+		try {
+			firstLine = lines[0];
+		} catch(Exception e) {
+			firstLine = "";
+		}
 		
 		for (String line : firstLinesForRent) {
 			if(line.equalsIgnoreCase(firstLine)) {
@@ -72,9 +87,9 @@ public class SignValidator implements ISignValidator {
 		
 		double cost;
 		try {
-			cost = Double.parseDouble(sign.getLine(1));
+			cost = Double.parseDouble(lines[1]);
 		} catch(NumberFormatException e) {
-			if(sign.getLine(1).equalsIgnoreCase("free")) {
+			if(lines[1].equalsIgnoreCase("free")) {
 				cost = 0;
 			}
 			else {
@@ -85,7 +100,7 @@ public class SignValidator implements ISignValidator {
 
 		BlockVector coords = sign.getLocation().toVector().toBlockVector();
 		BlockFace attachedFace = ((org.bukkit.material.Sign)sign.getData()).getAttachedFace();
-		String regionId = getRegionIdFromSign(sign.getLines());
+		String regionId = getRegionIdFromSign(lines);
 		
 		ISignData result = null;
 		
@@ -102,7 +117,9 @@ public class SignValidator implements ISignValidator {
 			
 			throw new SignException("Unknown reward type: " + type);
 		}
-		
+		for (int i = 0; i < lines.length && i < 4; i++) {
+			sign.setLine(i, lines[1]);
+		}
 		return result;
 	}
 
@@ -121,7 +138,7 @@ public class SignValidator implements ISignValidator {
 			regionName = null;
 		}
 		
-		if(regionName == null) {
+		if(regionName == null || regionName.isEmpty()) {
 			throw new SignException("Couldn't find region name on line 3 (and 4).");
 		}
 		

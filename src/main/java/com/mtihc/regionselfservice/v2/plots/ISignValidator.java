@@ -7,9 +7,9 @@ import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 
 public interface ISignValidator {
 
-	public abstract boolean isPlotSign(Sign sign);
+	public abstract boolean isPlotSign(Sign sign, String[] lines);
 	
-	public abstract ISignData createPlotSign(Sign sign) throws SignException;
+	public abstract ISignData createPlotSign(Sign sign, String[] lines) throws SignException;
 	
 	
 }

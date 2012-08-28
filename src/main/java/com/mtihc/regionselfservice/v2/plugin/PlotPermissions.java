@@ -10,20 +10,20 @@ public class PlotPermissions implements IPlotPermission {
 	private Map<PlotAction, String> perms = new HashMap<PlotAction, String>();
 	
 	public PlotPermissions() {
-		perms.put(PlotAction.BREAK_ANY_SIGN, "selfservice.breakanysign");
-		perms.put(PlotAction.BYPASS_BUY_COST, "selfservice.buy.bypasscost");
-		perms.put(PlotAction.BYPASS_CREATE_COST, "selfservice.create.bypasscost");
-		perms.put(PlotAction.BYPASS_MAX_REGIONS, "selfservice.bypassmaxregions");
-		perms.put(PlotAction.CREATE_ANYSIZE, "selfservice.craete.anysize");
-		perms.put(PlotAction.CREATE_ANYWHERE, "selfservice.create.anywhere");
-		perms.put(PlotAction.RENTOUT, "selfservice.rentout");
-		perms.put(PlotAction.RENTOUT_ANYREGION, "selfservice.rentout.anyregion");
-		perms.put(PlotAction.RENTOUT_ANYWHERE, "selfservice.rentout.anywhere");
-		perms.put(PlotAction.RENTOUT_FOR_FREE, "selfservice.rentout.forfree");
-		perms.put(PlotAction.SELL, "selfservice.sell");
-		perms.put(PlotAction.SELL_ANYREGION, "selfservice.sell.anyregion");
-		perms.put(PlotAction.SELL_ANYWHERE, "selfservice.sell.anywhere");
-		perms.put(PlotAction.SELL_FOR_FREE, "selfservice.sell.forfree");
+		perms.put(PlotAction.BREAK_ANY_SIGN, Permission.BREAK_ANY_SIGN);
+		perms.put(PlotAction.BYPASS_BUY_COST, Permission.BUY_BYPASSCOST);
+		perms.put(PlotAction.BYPASS_CREATE_COST, Permission.CREATE_BYPASSCOST);
+		perms.put(PlotAction.BYPASS_MAX_REGIONS, Permission.BYPASSMAX_REGIONS);
+		perms.put(PlotAction.CREATE_ANYSIZE, Permission.CREATE_ANYSIZE);
+		perms.put(PlotAction.CREATE_ANYWHERE, Permission.CREATE_ANYWHERE);
+		perms.put(PlotAction.RENTOUT, Permission.RENTOUT);
+		perms.put(PlotAction.RENTOUT_ANYREGION, Permission.RENTOUT_ANYREGION);
+		perms.put(PlotAction.RENTOUT_ANYWHERE, Permission.RENTOUT_ANYWHERE);
+		perms.put(PlotAction.RENTOUT_FOR_FREE, Permission.RENTOUT_FREE);
+		perms.put(PlotAction.SELL, Permission.SELL);
+		perms.put(PlotAction.SELL_ANYREGION, Permission.SELL_ANYREGION);
+		perms.put(PlotAction.SELL_ANYWHERE, Permission.SELL_ANYWHERE);
+		perms.put(PlotAction.SELL_FOR_FREE, Permission.SELL_FREE);
 	}
 
 	@Override

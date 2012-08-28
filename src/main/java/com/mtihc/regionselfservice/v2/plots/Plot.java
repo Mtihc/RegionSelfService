@@ -16,12 +16,12 @@ public class Plot extends PlotData {
 	private PlotWorld plotWorld;
 
 	public Plot(PlotWorld plotWorld, String regionId) {
-		super(plotWorld.getWorld(), regionId);
-		this.plotWorld = plotWorld;
+		this(plotWorld, new PlotData(plotWorld.getWorld(), regionId));
 	}
 	
 	public Plot(PlotWorld plotWorld, PlotData data) {
 		super(data);
+		this.plotWorld = plotWorld;
 		Collection<ISignData> signValues = signs.values();
 		for (ISignData signData : signValues) {
 			ISign sign = createPlotSign(signData);

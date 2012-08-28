@@ -54,7 +54,7 @@ public class PlotWorld {
 	}
 	
 	public Plot getPlot(Sign sign) throws SignException {
-		ISignData data = manager.getSignValidator().createPlotSign(sign);
+		ISignData data = manager.getSignValidator().createPlotSign(sign, sign.getLines());
 		if(data == null) {
 			return null;
 		}
