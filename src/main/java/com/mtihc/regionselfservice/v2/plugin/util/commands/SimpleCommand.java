@@ -14,8 +14,12 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 
 public class SimpleCommand implements ICommand {
+
+	private static final ChatColor COLOR_A = ChatColor.AQUA;
+	private static final ChatColor COLOR_B = ChatColor.DARK_AQUA;
 
 	protected final String label;
 	protected List<String> aliases;
@@ -125,7 +129,7 @@ public class SimpleCommand implements ICommand {
 	}
 	
 	public boolean hasPermission(CommandSender sender, String perm) {
-		if(perm == null || perm.isEmpty()) {
+		if(perm == null || perm.isEmpty() || sender instanceof ConsoleCommandSender) {
 			return true;
 		}
 		else {
@@ -165,7 +169,7 @@ public class SimpleCommand implements ICommand {
 				String help;
 				try {
 					help = args[0];
-					if(help.equalsIgnoreCase("?")) {
+					if(help.equalsIgnoreCase("?") || (help.equalsIgnoreCase("help") && nested.getNested("help") == null)) {
 						sendHelp(sender, nested);
 						return;
 					}
@@ -283,16 +287,16 @@ public class SimpleCommand implements ICommand {
 
 	public void sendHelp(CommandSender sender, ICommand cmd, int page) throws CommandException {
 		
-		sender.sendMessage(ChatColor.GRAY + "" + ChatColor.UNDERLINE + "Command:" + ChatColor.WHITE + " " + cmd.getUsage());
+		sender.sendMessage(COLOR_B + "Command:" + ChatColor.WHITE + " " + cmd.getUsage());
 		
 		if(cmd.getDescription() != null) {
-			sender.sendMessage(ChatColor.GRAY + cmd.getDescription());
+			sender.sendMessage(COLOR_A + cmd.getDescription());
 		}
 		
 		String[] help = cmd.getHelp();
 		if(help != null) {
 			for (String string : help) {
-				sender.sendMessage(ChatColor.GRAY + string);
+				sender.sendMessage(COLOR_A + string);
 			}
 		}
 		
@@ -318,14 +322,14 @@ public class SimpleCommand implements ICommand {
 			if (page > totalPages || page < 1) {
 				return;
 			}
-			sender.sendMessage(ChatColor.GRAY + "" + ChatColor.UNDERLINE + "Nested commands:" + ChatColor.UNDERLINE + " (page "
+			sender.sendMessage(COLOR_B + "Nested commands (page "
 					+ page + "/" + totalPages + "):");
 			
 			for (int i = startIndex; i < endIndex && i < total; i++) {
 				String lbl = labels[i];
 				ICommand nested = cmd.getNested(lbl);
 				if(hasPermission(sender, nested.getPermission())) {
-					sender.sendMessage(nested.getUsage() + ChatColor.GRAY + " " + nested.getDescription());
+					sender.sendMessage(ChatColor.WHITE + nested.getUsage() + COLOR_A + " " + nested.getDescription());
 				}
 				else {
 					i--;
@@ -333,6 +337,7 @@ public class SimpleCommand implements ICommand {
 				
 			}
 			
+			sender.sendMessage(COLOR_B + "Get more specific help: " + ChatColor.WHITE + "Type for example " + "/" + cmd.getUniqueLabel() + " " + labels[startIndex] + " help");
 		}
 		
 	}

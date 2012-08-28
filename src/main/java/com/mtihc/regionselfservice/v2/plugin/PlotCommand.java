@@ -54,7 +54,7 @@ public class PlotCommand extends SimpleCommand {
 		}
 	}
 	
-	@Command(aliases = { "count" }, args = "[player] [world]", desc = "Count how many regions you, or someone else owns.", help = { "" }, perm = Permission.COUNT)
+	@Command(aliases = { "count" }, args = "[player] [world]", desc = "Count regions.", help = { "Specify a player name, to count another player's regions.", "Specify a world name, to count regions in another world." }, perm = Permission.COUNT)
 	public void count(CommandSender sender, String[] args) throws CommandException {
 
 		String playerName;
@@ -119,7 +119,7 @@ public class PlotCommand extends SimpleCommand {
 		mgr.getControl().sendRegionCount(sender, player, world);
 	}
 	
-	@Command(aliases = { "define", "set", "create" }, args = "<region id>", desc = "Create a new region. The top-y and bottom-y will be set according to the configuration.", help = { "" }, perm = Permission.CREATE)
+	@Command(aliases = { "define", "set", "create" }, args = "<id>", desc = "Create a new region.", help = { "The top-y and bottom-y will be set according to the world's configuration." }, perm = Permission.CREATE)
 	public void define(CommandSender sender, String[] args) throws CommandException {
 		
 		Player player = getPlayer(sender);
@@ -142,7 +142,7 @@ public class PlotCommand extends SimpleCommand {
 		}
 	}
 	
-	@Command(aliases = { "define-exact", "set-exact", "create-exact" }, args = "<region id> [bottom-y] [top-y]", desc = "Create a new region. The top-y and bottom-y will be set according to the region selection. Or specify the top-y and bottom-y as command arguments.", help = { "" }, perm = Permission.CREATE_EXACT)
+	@Command(aliases = { "define-exact", "set-exact", "create-exact" }, args = "<id> [bottom-y] [top-y]", desc = "Create a new region.", help = { "The top-y and bottom-y will be set according to your region selection. ", "Or specify the top-y and bottom-y as command arguments." }, perm = Permission.CREATE_EXACT)
 	public void defineExact(CommandSender sender, String[] args) throws CommandException {
 		Player player = getPlayer(sender);
 		
@@ -178,7 +178,7 @@ public class PlotCommand extends SimpleCommand {
 		}
 	}
 	
-	@Command(aliases = { "redefine", "reset", "resize" }, args = "<region id>", desc = "Change a region. The top-y and bottom-y will be set according to the configuration.", help = { "" }, perm = Permission.REDEFINE)
+	@Command(aliases = { "redefine", "reset", "resize" }, args = "<id>", desc = "Change a region.", help = { "The top-y and bottom-y will be set according to the world's configuration." }, perm = Permission.REDEFINE)
 	public void redefine(CommandSender sender, String[] args) throws CommandException {
 		Player player = getPlayer(sender);
 		
@@ -200,7 +200,7 @@ public class PlotCommand extends SimpleCommand {
 		}
 	}
 	
-	@Command(aliases = { "redefine-exact", "reset-exact", "resize-exact" }, args = "<region id> [bottom-y] [top-y]", desc = "Change a region. The top-y and bottom-y will be set according to the region selection. Or specify the top-y and bottom-y as command arguments.", help = { "" }, perm = Permission.REDEFINE_EXACT)
+	@Command(aliases = { "redefine-exact", "reset-exact", "resize-exact" }, args = "<id> [bottom-y] [top-y]", desc = "Change a region.", help = { "The top-y and bottom-y will be set according to your region selection. ", "Or specify the top-y and bottom-y as command arguments." }, perm = Permission.REDEFINE_EXACT)
 	public void redefineExact(CommandSender sender, String[] args) throws CommandException {
 		Player player = getPlayer(sender);
 		
@@ -236,7 +236,7 @@ public class PlotCommand extends SimpleCommand {
 		}
 	}
 	
-	@Command(aliases = { "delete", "remove" }, args = "<region id>", desc = "Delete a region (if it's not being rented). And break all for-sale signs.", help = { "" }, perm = Permission.REMOVE)
+	@Command(aliases = { "delete", "remove" }, args = "<id>", desc = "Delete a region.", help = { "All for-sale signs will break automatically.", "Regions can only be deleted when ", "they are not being rented out anymore." }, perm = Permission.REMOVE)
 	public void delete(CommandSender sender, String[] args) throws CommandException {
 		
 		String regionId;
@@ -257,12 +257,13 @@ public class PlotCommand extends SimpleCommand {
 		}
 	}
 	
-	@Command(aliases = { "info" }, args = "[region id]", desc = "Get region info. Click a sign or use this command while looking at a sign. Or just specify a region id.", help = { "" }, perm = Permission.INFO)
+	@Command(aliases = { "info" }, args = "[id]", desc = "Get region info.", help = { "Click a sign, or use this command while looking at a sign. ", "Or just specify a region id." }, perm = Permission.INFO)
 	public void info(CommandSender sender, String[] args) throws CommandException {
 		
 		// TODO
 	}
 	
+	// TODO add [world] argument to reload command?
 	@Command(aliases = { "reload" }, args = "", desc = "Reload the configuration.", help = { "" }, perm = Permission.RELOAD)
 	public void reload(CommandSender sender, String[] args) throws CommandException {
 		
@@ -286,7 +287,7 @@ public class PlotCommand extends SimpleCommand {
 		
 	}*/
 	
-	@Command(aliases = { "worth" }, args = "<region id> [world] | <width> <height> [world] | <money>", desc = "See how much a region is worth. Or see how big of a region your money can buy.", help = { "Specify a region id, to see how much it's worth.", "Specify a width and length, to see how much it would be worth.", "Specify an amount of money, to see how big of a region you can afford." }, perm = Permission.WORTH)
+	@Command(aliases = { "worth" }, args = "<id> | <width> <length> | <money>", desc = "See how much a region is worth. Or see how big of a region your money can buy.", help = { "Specify a region id, to see how much it's worth.", "Specify a width and length, to see how much it would be worth.", "Specify an amount of money, to see how big of a region you can afford." }, perm = Permission.WORTH)
 	public void worth(CommandSender sender, String[] args) throws CommandException {
 		
 		double arg1;
