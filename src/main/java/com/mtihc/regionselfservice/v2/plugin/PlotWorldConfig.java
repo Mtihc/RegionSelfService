@@ -13,7 +13,7 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 	private String worldName;
 	
 	public PlotWorldConfig(JavaPlugin plugin, File dir, String worldName) {
-		super(plugin, dir + "/" + worldName + ".yml");
+		super(plugin, dir + File.separator + worldName + ".yml");
 		this.worldName = worldName;
 		reload();
 	}
@@ -25,97 +25,97 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 
 	@Override
 	public double getBlockWorth() {
-		return getConfig().getDouble("block-worth");
+		return getConfig().getDouble("block_worth", 0.22);
 	}
 
 	@Override
 	public double getOnSellMinBlockCost() {
-		return getConfig().getDouble("on-sell.min-block-cost");
+		return getConfig().getDouble("sell_min_block_cost", 0);
 	}
 
 	@Override
 	public double getOnSellMaxBlockCost() {
-		return getConfig().getDouble("on-sell.max-block-cost");
+		return getConfig().getDouble("sell_max_block_cost", getBlockWorth());
 	}
 
 	@Override
 	public double getOnRentMinBlockCost() {
-		return getConfig().getDouble("on-rent.min-block-cost");
+		return getConfig().getDouble("rent_min_block_cost", 0);
 	}
 
 	@Override
 	public double getOnRentMaxBlockCost() {
-		return getConfig().getDouble("on-rent.max-block-cost");
+		return getConfig().getDouble("rent_max_block_cost", getBlockWorth());
 	}
 
 	@Override
 	public int getMaxRegionCount() {
-		return getConfig().getInt("max-regions-per-player", 1);
+		return getConfig().getInt("max_regions_per_player", -1);
 	}
 
 	@Override
 	public boolean isReserveFreeRegionsEnabled() {
-		return getConfig().getBoolean("reserve-free-regions", true);
+		return getConfig().getBoolean("reserve_free_regions", true);
 	}
 
 	@Override
 	public int getMinimumY() {
-		return getConfig().getInt("on-create.sizes.minimum-y", 1);
+		return getConfig().getInt("region_size.minimum_y", 1);
 	}
 
 	@Override
 	public int getMaximumY() {
-		return getConfig().getInt("on-create.sizes.maximum-y", 255);
+		return getConfig().getInt("region_size.maximum_y", 255);
 	}
 
 	@Override
 	public int getMinimumHeight() {
-		return getConfig().getInt("on-create.sizes.minimum-height", 8);
+		return getConfig().getInt("region_size.minimum_height", 8);
 	}
 
 	@Override
 	public int getMaximumHeight() {
-		return getConfig().getInt("on-create.sizes.maximum-height", 128);
+		return getConfig().getInt("region_size.maximum_height", 128);
 	}
 
 	@Override
 	public int getMinimumWidthLength() {
-		return getConfig().getInt("on-create.sizes.minimum-width-length", 8);
+		return getConfig().getInt("region_size.minimum_width_length", 8);
 	}
 
 	@Override
 	public int getMaximumWidthLength() {
-		return getConfig().getInt("on-create.sizes.maximum-width-length", 128);
+		return getConfig().getInt("region_size.maximum_width_length", 128);
 	}
 
 	@Override
 	public int getDefaultBottomY() {
-		return getConfig().getInt("on-create.default-bottom-y", 0);
+		return getConfig().getInt("region_defaults.bottom_y", 0);
 	}
 
 	@Override
 	public int getDefaultTopY() {
-		return getConfig().getInt("on-create.default-top-y", 128);
+		return getConfig().getInt("region_defaults.top_y", 128);
 	}
 
 	@Override
 	public List<String> getDefaultOwners() {
-		return getConfig().getStringList("on-create.default-owners");
+		return getConfig().getStringList("region_defaults.owners");
 	}
 
 	@Override
 	public boolean isOverlapUnownedRegionAllowed() {
-		return getConfig().getBoolean("on-create.allow-overlap-unowned-regions", false);
+		return getConfig().getBoolean("allow_overlap_unowned_regions", false);
 	}
 
 	@Override
 	public boolean isAutomaticParentEnabled() {
-		return getConfig().getBoolean("on-create.automatic-parent", true);
+		return getConfig().getBoolean("region_defaults.parent_automatic", true);
 	}
 
 	@Override
 	public boolean isCreateCostEnabled() {
-		return getConfig().getBoolean("on-create.enable-cost", true);
+		return getConfig().getBoolean("enable_create_cost", true);
 	}
 
 }

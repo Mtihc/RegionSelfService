@@ -161,7 +161,7 @@ public class PlotControl {
 		// if reserve-free-regions is enabled: and cost is 0, then  
 		// check regionCount == 0
 		boolean reserve = world.getConfig().isReserveFreeRegionsEnabled();
-		if(reserve && cost <= 0 && regionCount == 0) {
+		if(reserve && cost <= 0 && regionCount > 0) {
 			throw new PlotControlException("Free regions are reserved for new players.");
 		}
 		
@@ -193,8 +193,7 @@ public class PlotControl {
 		
 		boolean bypassCost = player.hasPermission(
 				mgr.getPermissions().getPermission(PlotAction.BYPASS_BUY_COST));
-		// TODO remove this logger
-		mgr.getPlugin().getLogger().info("Player " + player.getName() + " has permission \"" + mgr.getPermissions().getPermission(PlotAction.BYPASS_BUY_COST) + "\".");
+		
 		if(!bypassCost) {
 			try {
 				mgr.getEconomy().withdraw(player.getName(), cost);

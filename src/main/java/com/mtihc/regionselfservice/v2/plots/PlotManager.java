@@ -18,6 +18,7 @@ public abstract class PlotManager {
 	protected final WorldGuardPlugin worldGuard;
 	protected final IEconomy economy;
 	protected final IPlotManagerConfig config;
+	protected final IPlotWorldConfig defaultConfig;
 	protected final Map<String, PlotWorld> worlds;
 	protected final ISignValidator signValidator;
 	protected final IPlotPermission perms;
@@ -25,11 +26,12 @@ public abstract class PlotManager {
 	
 	
 
-	public PlotManager(JavaPlugin plugin, WorldGuardPlugin worldGuard, IEconomy economy, IPlotManagerConfig config, ISignValidator signValidator, IPlotPermission perms) {
+	public PlotManager(JavaPlugin plugin, WorldGuardPlugin worldGuard, IEconomy economy, IPlotManagerConfig config, IPlotWorldConfig defaultConfig, ISignValidator signValidator, IPlotPermission perms) {
 		this.plugin = plugin;
 		this.worldGuard = worldGuard;
 		this.economy = economy;
 		this.config = config;
+		this.defaultConfig = defaultConfig;
 		this.worlds = new HashMap<String, PlotWorld>();
 		this.signValidator = signValidator;
 		this.perms = perms;

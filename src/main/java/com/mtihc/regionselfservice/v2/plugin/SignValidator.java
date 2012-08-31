@@ -65,17 +65,22 @@ public class SignValidator implements ISignValidator {
 		} catch(Exception e) {
 			firstLine = "";
 		}
-		
-		for (String line : firstLinesForRent) {
-			if(line.equalsIgnoreCase(firstLine)) {
-				type = SignType.FOR_RENT;
-				break;
+
+		if(type == null) {
+			for (String line : firstLinesForRent) {
+				if(line.equalsIgnoreCase(firstLine)) {
+					type = SignType.FOR_RENT;
+					lines[0] = line;
+					break;
+				}
 			}
 		}
 		if(type == null) {
 			for (String line : firstLinesForSale) {
 				if(line.equalsIgnoreCase(firstLine)) {
 					type = SignType.FOR_SALE;
+					lines[0] = line;
+					break;
 				}
 			}
 		}
@@ -87,9 +92,9 @@ public class SignValidator implements ISignValidator {
 		
 		double cost;
 		try {
-			cost = Double.parseDouble(lines[1]);
+			cost = Double.parseDouble(lines[1].trim());
 		} catch(NumberFormatException e) {
-			if(lines[1].equalsIgnoreCase("free")) {
+			if(lines[1].trim().equalsIgnoreCase("free")) {
 				cost = 0;
 			}
 			else {
@@ -98,6 +103,10 @@ public class SignValidator implements ISignValidator {
 		}
 		cost = Math.max(0, cost);
 
+		if(cost == 0) {
+			lines[1] = "FREE";
+		}
+		
 		BlockVector coords = sign.getLocation().toVector().toBlockVector();
 		BlockFace attachedFace = ((org.bukkit.material.Sign)sign.getData()).getAttachedFace();
 		String regionId = getRegionIdFromSign(lines);
@@ -118,7 +127,7 @@ public class SignValidator implements ISignValidator {
 			throw new SignException("Unknown reward type: " + type);
 		}
 		for (int i = 0; i < lines.length && i < 4; i++) {
-			sign.setLine(i, lines[1]);
+			sign.setLine(i, lines[1].trim());
 		}
 		return result;
 	}

@@ -1,10 +1,5 @@
-# 
-# sign-first-line
-#   for-rent:             List of options for the first line of a For-Rent sign
-#   for-sale:             List of options for the first line of a For-Sale sign
-# 
-sign-first-line:
-  for-rent:
+sign_first_line:
+  for_rent:
   - For Rent
-  for-sale:
+  for_sale:
   - For Sale

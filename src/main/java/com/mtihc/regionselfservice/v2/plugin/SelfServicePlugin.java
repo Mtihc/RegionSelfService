@@ -1,5 +1,6 @@
 package com.mtihc.regionselfservice.v2.plugin;
 
+import java.io.File;
 import java.util.logging.Level;
 
 import net.milkbowl.vault.economy.Economy;
@@ -59,7 +60,7 @@ public class SelfServicePlugin extends JavaPlugin {
 		
 		IEconomy economy = new EconomyVault(vault, getLogger());
 		
-		this.config = new PlotManagerConfig(this, "config");
+		this.config = new PlotManagerConfig(this, getDataFolder() + File.separator + "config.yml");
 		config.reload();
 		
 		ISignValidator signValidator = new SignValidator(
@@ -67,6 +68,7 @@ public class SelfServicePlugin extends JavaPlugin {
 				config.getFirstLineForSale());
 		
 		IPlotPermission perms = new PlotPermissions();
+		
 		
 		this.manager = new SelfServiceManager(this, worldGuard, economy, config, signValidator, perms);
 		
