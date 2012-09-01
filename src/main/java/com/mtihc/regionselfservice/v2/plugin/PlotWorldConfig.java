@@ -25,77 +25,77 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 
 	@Override
 	public double getBlockWorth() {
-		return getConfig().getDouble("block_worth", 0.22);
+		return getConfig().getDouble("block_worth");
 	}
 
 	@Override
 	public double getOnSellMinBlockCost() {
-		return getConfig().getDouble("sell_min_block_cost", 0);
+		return getConfig().getDouble("sell_min_block_cost");
 	}
 
 	@Override
 	public double getOnSellMaxBlockCost() {
-		return getConfig().getDouble("sell_max_block_cost", getBlockWorth());
+		return getConfig().getDouble("sell_max_block_cost");
 	}
 
 	@Override
 	public double getOnRentMinBlockCost() {
-		return getConfig().getDouble("rent_min_block_cost", 0);
+		return getConfig().getDouble("rent_min_block_cost");
 	}
 
 	@Override
 	public double getOnRentMaxBlockCost() {
-		return getConfig().getDouble("rent_max_block_cost", getBlockWorth());
+		return getConfig().getDouble("rent_max_block_cost");
 	}
 
 	@Override
 	public int getMaxRegionCount() {
-		return getConfig().getInt("max_regions_per_player", -1);
+		return getConfig().getInt("max_regions_per_player");
 	}
 
 	@Override
 	public boolean isReserveFreeRegionsEnabled() {
-		return getConfig().getBoolean("reserve_free_regions", true);
+		return getConfig().getBoolean("reserve_free_regions");
 	}
 
 	@Override
 	public int getMinimumY() {
-		return getConfig().getInt("region_size.minimum_y", 1);
+		return getConfig().getInt("region_size.minimum_y");
 	}
 
 	@Override
 	public int getMaximumY() {
-		return getConfig().getInt("region_size.maximum_y", 255);
+		return getConfig().getInt("region_size.maximum_y");
 	}
 
 	@Override
 	public int getMinimumHeight() {
-		return getConfig().getInt("region_size.minimum_height", 8);
+		return getConfig().getInt("region_size.minimum_height");
 	}
 
 	@Override
 	public int getMaximumHeight() {
-		return getConfig().getInt("region_size.maximum_height", 128);
+		return getConfig().getInt("region_size.maximum_height");
 	}
 
 	@Override
 	public int getMinimumWidthLength() {
-		return getConfig().getInt("region_size.minimum_width_length", 8);
+		return getConfig().getInt("region_size.minimum_width_length");
 	}
 
 	@Override
 	public int getMaximumWidthLength() {
-		return getConfig().getInt("region_size.maximum_width_length", 128);
+		return getConfig().getInt("region_size.maximum_width_length");
 	}
 
 	@Override
 	public int getDefaultBottomY() {
-		return getConfig().getInt("region_defaults.bottom_y", 0);
+		return getConfig().getInt("region_defaults.bottom_y");
 	}
 
 	@Override
 	public int getDefaultTopY() {
-		return getConfig().getInt("region_defaults.top_y", 128);
+		return getConfig().getInt("region_defaults.top_y");
 	}
 
 	@Override
@@ -105,17 +105,17 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 
 	@Override
 	public boolean isOverlapUnownedRegionAllowed() {
-		return getConfig().getBoolean("allow_overlap_unowned_regions", false);
+		return getConfig().getBoolean("allow_overlap_unowned_regions");
 	}
 
 	@Override
 	public boolean isAutomaticParentEnabled() {
-		return getConfig().getBoolean("region_defaults.parent_automatic", true);
+		return getConfig().getBoolean("region_defaults.parent_automatic");
 	}
 
 	@Override
 	public boolean isCreateCostEnabled() {
-		return getConfig().getBoolean("enable_create_cost", true);
+		return getConfig().getBoolean("enable_create_cost");
 	}
 
 }

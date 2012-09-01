@@ -1,5 +1,6 @@
 package com.mtihc.regionselfservice.v2.plugin;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
@@ -246,12 +247,30 @@ public class PlotCommand extends SimpleCommand {
 			throw new CommandException("Expected a region id.");
 		}
 		
+		World world = null;
 		if(args.length > 1) {
-			throw new CommandException("Expceted only a region id.");
+			try {
+				world = Bukkit.getWorld(args[1]);
+			} catch(Exception e) {
+				world = null;
+			}
+			
+			if(args.length > 2) {
+				throw new CommandException("Expceted only a region id. And optionally a world name.");
+			}
+			
 		}
 		
+		if(world == null) {
+			if(!(sender instanceof Player)) {
+				throw new CommandException("Expected a region id and world name.");
+			}
+			world = ((Player) sender).getWorld();
+		}
+		
+		
 		try {
-			mgr.getControl().delete(sender, regionId);
+			mgr.getControl().delete(sender, world, regionId);
 		} catch (PlotControlException e) {
 			throw new CommandException(e.getMessage());
 		}
@@ -271,8 +290,7 @@ public class PlotCommand extends SimpleCommand {
 			throw new CommandException("Expected no arguments.");
 		}
 		
-		PlotManagerConfig config = (PlotManagerConfig) mgr.getConfig();
-		config.reload();
+		mgr.getPlugin().reloadConfig();
 		sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
 	}
 	

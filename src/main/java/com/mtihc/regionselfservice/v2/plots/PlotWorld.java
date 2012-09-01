@@ -3,9 +3,8 @@ package com.mtihc.regionselfservice.v2.plots;
 import org.bukkit.World;
 import org.bukkit.block.Sign;
 
-import com.mtihc.regionselfservice.v2.plots.data.ISignData;
-import com.mtihc.regionselfservice.v2.plots.data.PlotData;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 
 public class PlotWorld {
@@ -48,17 +47,14 @@ public class PlotWorld {
 	public Plot getPlot(String regionId) {
 		PlotData data = plots.get(regionId);
 		if(data == null) {
-			return null;
+			data = new PlotData(world, regionId, 0, 0);
 		}
 		return createPlot(data);
 	}
 	
 	public Plot getPlot(Sign sign) throws SignException {
-		ISignData data = manager.getSignValidator().createPlotSign(sign, sign.getLines());
-		if(data == null) {
-			return null;
-		}
-		return getPlot(data.getRegionId());
+		String regionId = PlotSignType.getRegionId(sign, sign.getLines());
+		return getPlot(regionId);
 	}
 	
 	protected Plot createPlot(PlotData data) {

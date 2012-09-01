@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import com.mtihc.regionselfservice.v2.plots.IPlotDataRepository;
-import com.mtihc.regionselfservice.v2.plots.data.PlotData;
+import com.mtihc.regionselfservice.v2.plots.PlotData;
 import com.mtihc.regionselfservice.v2.plugin.util.Repository;
 
 public class PlotDataRepository extends Repository<String, PlotData> implements

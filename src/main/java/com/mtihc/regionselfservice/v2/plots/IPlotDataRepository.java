@@ -3,8 +3,6 @@ package com.mtihc.regionselfservice.v2.plots;
 import java.util.Collection;
 import java.util.Set;
 
-import com.mtihc.regionselfservice.v2.plots.data.PlotData;
-
 public interface IPlotDataRepository {
 
 	public abstract PlotData get(String id);

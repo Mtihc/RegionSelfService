@@ -1,8 +1,8 @@
 package com.mtihc.regionselfservice.v2.plots;
 
+import java.util.Collection;
 import java.util.Iterator;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -16,14 +16,12 @@ import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.util.BlockVector;
 
 import com.mtihc.regionselfservice.v2.plots.IPlotPermission.PlotAction;
-import com.mtihc.regionselfservice.v2.plots.data.ISignData;
-import com.mtihc.regionselfservice.v2.plots.data.PlotData;
-import com.mtihc.regionselfservice.v2.plots.data.SignDataForRent;
-import com.mtihc.regionselfservice.v2.plots.data.SignDataForSale;
-import com.mtihc.regionselfservice.v2.plots.data.SignType;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
+import com.mtihc.regionselfservice.v2.plots.signs.IPlotSignData;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 class PlotListener implements Listener {
@@ -44,44 +42,41 @@ class PlotListener implements Listener {
 		}
 		
 		Sign sign = (Sign) event.getBlock().getState();
-		if(!mgr.getSignValidator().isPlotSign(sign, event.getLines())) {
-			Bukkit.getLogger().info("not a plot sign!");
+		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, event.getLines());
+		if(type == null) {
 			return;// not a plot-sign
+		}
+		
+		// player
+		Player player = event.getPlayer();
+
+		// region id
+		String regionId = PlotSignType.getRegionId(sign, event.getLines());
+		if(regionId == null || regionId.isEmpty()) {
+			player.sendMessage(ChatColor.RED + "Couldn't find a region id on this plot sign.");
+			return;
 		}
 		
 		// plot world
 		PlotWorld plotWorld = mgr.getPlotWorld(sign.getWorld().getName());
 		
-		// player
-		Player player = event.getPlayer();
-		
 		Plot plot;
-		ISignData plotSign;
+		IPlotSignData plotSign;
 		
 		try {
-			// create sign data
-			plotSign = mgr.getSignValidator().createPlotSign(sign, event.getLines());
 			
 			// get plot data
- 			plot = plotWorld.getPlot(plotSign.getRegionId());
-			if(plot == null) {
-				// plot data doesn't exist yet, 
-				// create plot data
-				PlotData plotData = new PlotData(sign.getWorld(), plotSign.getRegionId());
-				plot = plotWorld.createPlot(plotData);
-			}
-			if(plotSign instanceof SignDataForRent) {
-				plotSign = new SignForRent(plot, (SignDataForRent) plotSign);
-			}
-			else if(plotSign instanceof SignDataForSale) {
-				plotSign = new SignForSale(plot, (SignDataForSale) plotSign);
-			}
+ 			plot = plotWorld.getPlot(regionId);
+			
+			// create sign data
+			plotSign = type.createPlotSign(plot, sign, event.getLines());
+			
 			// add sign to plot data
 			plot.setSign(plotSign);
 			
 		} catch (SignException e) {
 			// invalid sign
-			player.sendMessage(ChatColor.RED + "Failed to create selfservice-sign: ");
+			player.sendMessage(ChatColor.RED + "Failed to create " + type.name() + " sign: ");
 			player.sendMessage(ChatColor.RED + e.getMessage());
 			// break the sign
 			event.setCancelled(true);
@@ -92,8 +87,8 @@ class PlotListener implements Listener {
 		
 		ProtectedRegion region = plot.getRegion();
 		if(region == null) {
-			player.sendMessage(ChatColor.RED + "Failed to create selfservice-sign. ");
-			player.sendMessage(ChatColor.RED + "Region \"" + plotSign.getRegionId() + "\" doesn't exist.");
+			player.sendMessage(ChatColor.RED + "Failed to create " + type.name() + " sign. ");
+			player.sendMessage(ChatColor.RED + "Region \"" + plot.getRegionId() + "\" doesn't exist.");
 			event.setCancelled(true);
 			sign.getBlock().breakNaturally();
 			return;
@@ -103,16 +98,11 @@ class PlotListener implements Listener {
 		boolean isInside = region.contains(sign.getX(), sign.getY(), sign.getZ());
 		
 		IPlotPermission perms = mgr.getPermissions();
-		
-		SignType type = plotSign.getSignType();
-		
 		IPlotWorldConfig config = plot.getPlotWorld().getConfig();
 		
-		switch(type) {
-		case FOR_RENT:
+		if(type == PlotSignType.FOR_RENT) {
 			
-			
-			
+			// check permission to rent out
 			if(!player.hasPermission(perms.getPermission(PlotAction.RENTOUT))) {
 				player.sendMessage(ChatColor.RED + "You don't have permission to rent out regions.");
 				event.setCancelled(true);
@@ -120,6 +110,7 @@ class PlotListener implements Listener {
 				return;
 			}
 			
+			// check permission to rent out, unowned regions
 			if(!isOwner && !player.hasPermission(
 					perms.getPermission(PlotAction.RENTOUT_ANYREGION))) {
 				player.sendMessage(ChatColor.RED + "You can't rent out regions that you don't own.");
@@ -128,6 +119,7 @@ class PlotListener implements Listener {
 				return;
 			}
 			
+			// check permission to rent out, outside the region
 			if(!isInside && !player.hasPermission(
 					perms.getPermission(PlotAction.RENTOUT_ANYWHERE))) {
 				player.sendMessage(ChatColor.RED + "You can't place this sign outside the region itself.");
@@ -138,13 +130,21 @@ class PlotListener implements Listener {
 			
 			
 			
-			SignForRent rentSign = (SignForRent) plotSign;
-			double rentCost = rentSign.getCostPerHour();
-			// TODO check if there was no cost, then we need to set the cost automatically using existing signs
+			double rentCostOld = plot.getRentCost();
+			double rentCost;
+			try {
+				rentCost = Double.parseDouble(event.getLine(1).trim());
+			} catch(Exception e) {
+				rentCost = rentCostOld;
+			}
+			event.setLine(1, String.valueOf(rentCost));
 			
 			// check min/max cost
 			double minRentCost = plot.getWorth(config.getOnRentMinBlockCost());
 			double maxRentCost = plot.getWorth(config.getOnRentMaxBlockCost());
+			minRentCost = plot.getWorth(minRentCost);
+			maxRentCost = plot.getWorth(maxRentCost);
+			
 			if(rentCost < minRentCost) {
 				player.sendMessage(ChatColor.RED + "The price is too low.");
 				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
@@ -153,13 +153,14 @@ class PlotListener implements Listener {
 				return;
 			}
 			else if(rentCost > maxRentCost) {
-				player.sendMessage(ChatColor.RED + "The price is high.");
+				player.sendMessage(ChatColor.RED + "The price is too high.");
 				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
 				return;
 			}
 			
+			// check permission to rent out, for free
 			if(rentCost == 0) {
 				if(!player.hasPermission(perms.getPermission(PlotAction.RENTOUT_FOR_FREE))) {
 					player.sendMessage(ChatColor.RED + "You don't have permission to rent out regions for free.");
@@ -168,14 +169,14 @@ class PlotListener implements Listener {
 					return;
 				}
 			}
-
-			// TODO check if the cost is different, 
-			// then we need to set the cost on all other signs
-			// (that have no renter)
 			
+			if(rentCostOld != rentCost) {
+				plot.setRentCost(rentCost);
+			}
+		}
+		else if(type == PlotSignType.FOR_SALE) {
 			
-			break;
-		case FOR_SALE:
+			// check permission to sell
 			if(!player.hasPermission(perms.getPermission(PlotAction.SELL))) {
 				player.sendMessage(ChatColor.RED + "You don't have permission to sell regions.");
 				event.setCancelled(true);
@@ -189,6 +190,7 @@ class PlotListener implements Listener {
 			// because players would be able to work together, to mess up your server
 			// send message: "You can't sell this region because the following players would be homeless."
 			
+			// check permission to sell, unowned regions
 			if(!isOwner && !player.hasPermission(
 					perms.getPermission(PlotAction.SELL_ANYREGION))) {
 				player.sendMessage(ChatColor.RED + "You can't sell regions that you don't own.");
@@ -197,6 +199,7 @@ class PlotListener implements Listener {
 				return;
 			}
 			
+			// check permission to sell, outside the region
 			if(!isInside && !player.hasPermission(
 					perms.getPermission(PlotAction.SELL_ANYWHERE))) {
 				player.sendMessage(ChatColor.RED + "You can't place this sign outside the region itself.");
@@ -204,14 +207,22 @@ class PlotListener implements Listener {
 				sign.getBlock().breakNaturally();
 				return;
 			}
-			
-			SignForSale sellSign = (SignForSale) plotSign;
-			double sellCost = sellSign.getCost();
-			// TODO check if there was no cost, then we need to set the cost automatically using existing signs
+
+			double sellCostOld = plot.getSellCost();
+			double sellCost;
+			try {
+				sellCost = Double.parseDouble(event.getLine(1));
+			} catch(Exception e) {
+				sellCost = sellCostOld;
+			}
+			event.setLine(1, String.valueOf(sellCost));
 			
 			// check min/max cost
 			double minSellCost = plot.getWorth(config.getOnSellMinBlockCost());
 			double maxSellCost = plot.getWorth(config.getOnSellMaxBlockCost());
+			minSellCost = plot.getWorth(minSellCost);
+			maxSellCost = plot.getWorth(maxSellCost);
+			
 			if(sellCost < minSellCost) {
 				player.sendMessage(ChatColor.RED + "The price is too low.");
 				player.sendMessage(ChatColor.RED + "The sell-cost must be between " + mgr.getEconomy().format(minSellCost) + " and " + mgr.getEconomy().format(maxSellCost) + ".");
@@ -227,6 +238,7 @@ class PlotListener implements Listener {
 				return;
 			}
 			
+			// check permission to sell, for free
 			if(sellCost == 0) {
 				if(!player.hasPermission(perms.getPermission(PlotAction.SELL_FOR_FREE))) {
 					player.sendMessage(ChatColor.RED + "You don't have permission to sell regions for free.");
@@ -236,13 +248,14 @@ class PlotListener implements Listener {
 				}
 			}
 			
-			// TODO check if the cost is different,
-			// then we need to set the cost on all other signs
+			if(sellCostOld != sellCost) {
+				plot.setSellCost(sellCost);
+			}
 			
-			
-			break;
-		default:
-			break;
+		}
+		else {
+			player.sendMessage(ChatColor.RED + "Unknown sign type: \"" + type.name() + "\"");
+			return;
 		}
 		
 		// TODO plot-sign change event, synced
@@ -252,6 +265,8 @@ class PlotListener implements Listener {
 		
 		plot.setSign(plotSign);
 		plot.save();
+		
+		plot.sendInfo(player);
 	}
 	
 	@EventHandler
@@ -259,14 +274,19 @@ class PlotListener implements Listener {
 		if(event.isCancelled()) {
 			return;// event was cancelled
 		}
-		if(!event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-			return;// didn't right-click
+		if(!event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && !event.getAction().equals(Action.LEFT_CLICK_BLOCK)) {
+			return;// didn't right-click (or left-click)
+			
+			// added left-click because 
+			// right-click doesn't work when you're standing 
+			// too close with a block in your hand.
 		}
 		if(!(event.getClickedBlock().getState() instanceof Sign)) {
 			return;// not a sign
 		}
 		Sign sign = (Sign) event.getClickedBlock().getState();
-		if(!mgr.getSignValidator().isPlotSign(sign, sign.getLines())) {
+		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, sign.getLines());
+		if(type == null) {
 			return;// not a plot-sign
 		}
 		
@@ -300,10 +320,11 @@ class PlotListener implements Listener {
 		}
 		
 
+		// send plot info
+		plot.sendInfo(event.getPlayer());
 		// TODO plot-sign info event, synced
 		// event includes Sign, ISign, Plot, Player and list of messages
 		
-		// send plot info using messages from event
 		
 		event.setCancelled(true);
 	}
@@ -328,22 +349,16 @@ class PlotListener implements Listener {
 		}
 		Sign sign = (Sign) block.getState();
 		
-		if(!mgr.getSignValidator().isPlotSign(sign, sign.getLines())) {
+		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, sign.getLines());
+		if(type == null) {
 			return;// not a plot-sign
 		}
 		
-		
-		ISignData data;
-		try {
-			data = mgr.getSignValidator().createPlotSign(sign, sign.getLines());
-		} catch (SignException e) {
-			// invalid sign, let it break
-			return;
-		}
+		String regionId = PlotSignType.getRegionId(sign, sign.getLines());
 		
 		PlotWorld plotWorld = mgr.getPlotWorld(sign.getWorld().getName());
 		
-		Plot plot = plotWorld.getPlot(data.getRegionId());
+		Plot plot = plotWorld.getPlot(regionId);
 		
 		if(plot == null) {
 			// not a saved sign, let it break
@@ -356,6 +371,15 @@ class PlotListener implements Listener {
 			// let it break
 			return;
 		}
+		
+		BlockVector coords = sign.getLocation().toVector().toBlockVector();
+		IPlotSignData plotSign = plot.removeSign(coords);
+		if(plotSign == null) {
+			// sign data doesn't exist
+			// let it break
+			return;
+		}
+		type = plotSign.getType();
 		
 		if(event instanceof BlockBreakEvent) {
 			BlockBreakEvent e = (BlockBreakEvent) event;
@@ -372,7 +396,14 @@ class PlotListener implements Listener {
 				return;
 			}
 			else {
-				// TODO send info: "You broke a plot-sign, this many signs are left"
+				
+				Collection<IPlotSignData> signs = plot.getSigns(type);
+				if(signs == null || signs.isEmpty()) {
+					player.sendMessage(ChatColor.GREEN + "You broke the last " + type.name() + " sign of region \"" + plot.getRegionId() + "\".");
+				}
+				else {
+					player.sendMessage(ChatColor.GREEN + "You broke a " + type.name() + " sign of region \"" +  plot.getRegionId() + "\". There are " + signs.size() + " " + type.name() + " signs left.");
+				}
 			}
 		}
 		else {

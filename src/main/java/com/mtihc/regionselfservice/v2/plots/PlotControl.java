@@ -19,12 +19,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.BlockVector;
 
 import com.mtihc.regionselfservice.v2.plots.IPlotPermission.PlotAction;
-import com.mtihc.regionselfservice.v2.plots.data.ISignData;
-import com.mtihc.regionselfservice.v2.plots.data.SignType;
 import com.mtihc.regionselfservice.v2.plots.exceptions.EconomyException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotBoundsException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotControlException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
+import com.mtihc.regionselfservice.v2.plots.signs.IPlotSign;
+import com.mtihc.regionselfservice.v2.plots.signs.IPlotSignData;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.bukkit.selections.Selection;
@@ -109,8 +110,7 @@ public class PlotControl {
 		BlockVector coords = sign.getLocation().toVector().toBlockVector();
 		PlotWorld world = mgr.getPlotWorld(player.getWorld().getName());
 		Plot plot;
-		ISignData plotSign;
-		SignForSale saleSign;
+		IPlotSign plotSign = null;
 		
 		try {
 			plot = world.getPlot(sign);
@@ -119,25 +119,23 @@ public class PlotControl {
 		}
 		
 		if(plot != null) {
-			plotSign = plot.getSign(coords);
-		}
-		else {
-			plotSign = null;
+			plotSign = (IPlotSign) plot.getSign(coords);
 		}
 		
-		if(plotSign == null || !(plotSign instanceof SignForSale)) {
+		if(plotSign == null || plotSign.getType() != PlotSignType.FOR_SALE) {
 			throw new PlotControlException("You're not looking at a for-sale sign.");
 		}
-		saleSign = (SignForSale) plotSign;
-		
-		
 		
 		// get region (still exists?)
 		ProtectedRegion region = plot.getRegion();
 		if(region == null) {
 			throw new PlotControlException("Sorry, the region doesn't exist.");
 		}
+
 		
+		if(!plot.isForSale()) {
+			throw new PlotControlException("Sorry, region \"" + plot.getRegionId() + "\" isn't for sale. This is probably and old sign.");
+		}
 
 		// already owner?
 		if(region.isOwner(player.getName())) {
@@ -156,7 +154,7 @@ public class PlotControl {
 		
 
 		// get region cost
-		double cost = saleSign.getCost();
+		double cost = plot.getSellCost();
 		
 		// if reserve-free-regions is enabled: and cost is 0, then  
 		// check regionCount == 0
@@ -222,8 +220,8 @@ public class PlotControl {
 		}
 		
 		// break all for sale signs
-		Collection<ISignData> forSaleSigns = plot.getSigns(SignType.FOR_SALE);
-		for (ISignData data : forSaleSigns) {
+		Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
+		for (IPlotSignData data : forSaleSigns) {
 			BlockVector vec = data.getBlockVector();
 			Block block = vec.toLocation(world.getWorld()).getBlock();
 			if(block.getState() instanceof Sign) {
@@ -231,11 +229,14 @@ public class PlotControl {
 			}
 			plot.removeSign(vec);
 		}
-		plot.save();
 		
 		
-		// TODO delete plot information (because it's no longer for sale.. uhm and for rent?)
 		
+		// delete if possible, otherwise just save changes
+		// (a plot can't be deleted when there's still active renters)
+		if(!plot.delete()) {
+			plot.save();
+		}
 		// TODO inform buyer, previous owners, current members
 		
 	}
@@ -460,7 +461,8 @@ public class PlotControl {
 		} catch (ProtectionDatabaseException e) {
 			throw new PlotControlException("Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage(), e);
 		}
-		// TODO send region info to indicate it was successful
+		// send region info to indicate it was successful
+		world.getPlot(regionId).sendInfo(player);
 	}
 	
 	
@@ -610,8 +612,19 @@ public class PlotControl {
 		
 	}
 	
-	public void delete(CommandSender sender, String regionId) throws PlotControlException {
-		// TODO
+	public void delete(CommandSender sender, World world, String regionId) throws PlotControlException {
+		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
+		Plot plot = plotWorld.getPlot(regionId);
+		if(plot == null) {
+			throw new PlotControlException("Region \"" + regionId + "\" doesn't exist.");
+		}
+		if(!plot.delete()) {
+			throw new PlotControlException("Failed to delete region \"" + regionId + "\". There might still be players renting that region.");
+		}
+		else {
+			// TODO refund after delete
+			sender.sendMessage(ChatColor.YELLOW + "Region \"" + regionId + "\" deleted.");
+		}
 	}
 	
 	public void sendRegionCount(CommandSender sender, OfflinePlayer owner, World world) {
@@ -629,7 +642,6 @@ public class PlotControl {
 				+ countString + ChatColor.GREEN + " regions in world "
 				+ ChatColor.WHITE + "'" + world.getName() + "'"
 				+ ChatColor.GREEN + ".");
-		
 		
 	}
 	
