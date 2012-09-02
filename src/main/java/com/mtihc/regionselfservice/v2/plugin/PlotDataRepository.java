@@ -12,31 +12,27 @@ import com.mtihc.regionselfservice.v2.plots.IPlotDataRepository;
 import com.mtihc.regionselfservice.v2.plots.PlotData;
 import com.mtihc.regionselfservice.v2.plugin.util.Repository;
 
-public class PlotDataRepository extends Repository<String, PlotData> implements
+public abstract class PlotDataRepository extends Repository<String, PlotData> implements
 		IPlotDataRepository {
 
-	private String worldName;
-
-	public PlotDataRepository(String directory, String worldName) {
-		this(new File(directory), worldName, null);
+	public PlotDataRepository(String directory) {
+		this(new File(directory), null);
 	}
 
-	public PlotDataRepository(File directory, String worldName) {
-		this(directory, worldName, null);
+	public PlotDataRepository(File directory) {
+		this(directory, null);
 	}
 
-	public PlotDataRepository(String directory, String worldName, Logger logger) {
-		this(new File(directory), worldName, logger);
+	public PlotDataRepository(String directory, Logger logger) {
+		this(new File(directory), logger);
 	}
 
-	public PlotDataRepository(File directory, String worldName, Logger logger) {
-		super(new File(directory + "/" + worldName), logger);
-		this.worldName = worldName;
+	public PlotDataRepository(File directory, Logger logger) {
+		super(directory, logger);
 	}
-	
-	public String getWorldName() {
-		return worldName;
-	}
+
+	@Override
+	protected abstract String getPathByKey(String regionId);
 
 	@Override
 	public Collection<PlotData> getValues() {
@@ -69,11 +65,6 @@ public class PlotDataRepository extends Repository<String, PlotData> implements
 			}
 		});
 		return ids;
-	}
-
-	@Override
-	protected String getPathByKey(String key) {
-		return directory + "/" + key + ".yml";
 	}
 
 }

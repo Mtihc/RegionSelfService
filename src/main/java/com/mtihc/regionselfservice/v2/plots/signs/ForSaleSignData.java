@@ -5,6 +5,7 @@ import java.util.Map;
 import org.bukkit.util.BlockVector;
 
 
+
 public class ForSaleSignData extends PlotSignData {
 
 	public ForSaleSignData(ForSaleSignData other) {

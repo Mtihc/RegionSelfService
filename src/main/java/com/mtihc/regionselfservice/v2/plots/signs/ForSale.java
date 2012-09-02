@@ -5,6 +5,7 @@ import java.util.List;
 import org.bukkit.block.Sign;
 import org.bukkit.util.BlockVector;
 
+import com.mtihc.regionselfservice.v2.plots.IPlotSignData;
 import com.mtihc.regionselfservice.v2.plots.Plot;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 

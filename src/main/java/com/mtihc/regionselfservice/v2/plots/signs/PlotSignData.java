@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.bukkit.util.BlockVector;
 
+import com.mtihc.regionselfservice.v2.plots.IPlotSignData;
+
 
 abstract class PlotSignData implements IPlotSignData {
 

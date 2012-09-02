@@ -2,6 +2,7 @@ package com.mtihc.regionselfservice.v2.plots.signs;
 
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 
+import com.mtihc.regionselfservice.v2.plots.IPlotSign;
 import com.mtihc.regionselfservice.v2.plots.Plot;
 
 @DelegateDeserialization(ForSaleSignData.class)

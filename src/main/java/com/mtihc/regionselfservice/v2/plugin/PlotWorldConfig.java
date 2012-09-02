@@ -2,25 +2,27 @@ package com.mtihc.regionselfservice.v2.plugin;
 
 import java.io.File;
 import java.util.List;
-
-import org.bukkit.plugin.java.JavaPlugin;
+import java.util.logging.Logger;
 
 import com.mtihc.regionselfservice.v2.plots.IPlotWorldConfig;
 import com.mtihc.regionselfservice.v2.plugin.util.YamlFile;
 
 public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 
-	private String worldName;
-	
-	public PlotWorldConfig(JavaPlugin plugin, File dir, String worldName) {
-		super(plugin, dir + File.separator + worldName + ".yml");
-		this.worldName = worldName;
-		reload();
+	public PlotWorldConfig(String filePath) {
+		this(new File(filePath), null);
 	}
 	
-	@Override
-	public String getWorldName() {
-		return worldName;
+	public PlotWorldConfig(File file) {
+		this(file, null);
+	}
+	
+	public PlotWorldConfig(String filePath, Logger logger) {
+		this(new File(filePath), logger);
+	}
+	
+	public PlotWorldConfig(File file, Logger logger) {
+		super(file, logger);
 	}
 
 	@Override

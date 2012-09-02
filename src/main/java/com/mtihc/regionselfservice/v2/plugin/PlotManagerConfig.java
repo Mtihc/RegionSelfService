@@ -13,11 +13,11 @@ public class PlotManagerConfig extends YamlFile implements IPlotManagerConfig {
 	
 	
 	public PlotManagerConfig(JavaPlugin plugin, File file) {
-		super(plugin, file);
+		super(file, plugin.getLogger());
 	}
 
 	public PlotManagerConfig(JavaPlugin plugin, String filePath) {
-		super(plugin, filePath);
+		super(filePath, plugin.getLogger());
 	}
 
 	public List<String> getFirstLineForRent() {

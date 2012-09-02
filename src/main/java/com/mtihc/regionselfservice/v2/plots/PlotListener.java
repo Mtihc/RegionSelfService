@@ -20,7 +20,6 @@ import org.bukkit.util.BlockVector;
 
 import com.mtihc.regionselfservice.v2.plots.IPlotPermission.PlotAction;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
-import com.mtihc.regionselfservice.v2.plots.signs.IPlotSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 

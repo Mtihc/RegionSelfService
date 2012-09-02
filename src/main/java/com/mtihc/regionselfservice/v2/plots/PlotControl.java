@@ -23,8 +23,6 @@ import com.mtihc.regionselfservice.v2.plots.exceptions.EconomyException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotBoundsException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotControlException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
-import com.mtihc.regionselfservice.v2.plots.signs.IPlotSign;
-import com.mtihc.regionselfservice.v2.plots.signs.IPlotSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;

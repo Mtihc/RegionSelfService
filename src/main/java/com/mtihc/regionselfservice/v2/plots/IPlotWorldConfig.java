@@ -4,8 +4,6 @@ import java.util.List;
 
 public interface IPlotWorldConfig {
 
-	public abstract String getWorldName();
-	
 	public abstract double getBlockWorth();
 	
 	public abstract double getOnSellMinBlockCost();

@@ -3,12 +3,15 @@ package com.mtihc.regionselfservice.v2.plots;
 import java.util.Collection;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
-import com.mtihc.regionselfservice.v2.plots.signs.IPlotSign;
-import com.mtihc.regionselfservice.v2.plots.signs.IPlotSignData;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 
@@ -21,7 +24,7 @@ public class Plot extends PlotData {
 
 
 	public Plot(PlotWorld plotWorld, PlotData data) {
-		super(data.getWorld(), data.getRegionId(), data.getSellCost(), data.getRentCost());
+		super(data.getRegionId(), data.getSellCost(), data.getRentCost());
 		this.plotWorld = plotWorld;
 		this.manager = plotWorld.getPlotManager();
 		Collection<IPlotSignData> signs = data.getSigns();
@@ -31,7 +34,9 @@ public class Plot extends PlotData {
 		
 	}
 	
-	
+	public World getWorld() {
+		return plotWorld.getWorld();
+	}
 	
 	public PlotWorld getPlotWorld() {
 		return plotWorld;
@@ -124,7 +129,7 @@ public class Plot extends PlotData {
 		
 		String[] wgInfo = new String[]{
 				ChatColor.GREEN + "Region: " + ChatColor.DARK_GREEN + getRegionId() + ChatColor.GREEN + " Priority: " + ChatColor.DARK_GREEN + region.getPriority() + ChatColor.GREEN + " Parent: " + ChatColor.DARK_GREEN + (region.getParent() == null ? "no parent" : region.getParent().getId()),
-				ChatColor.GREEN + "World: " + ChatColor.DARK_GREEN + world.getName() + ChatColor.GREEN + " Min: " + ChatColor.DARK_GREEN + vectorToString(region.getMinimumPoint()) + ChatColor.GREEN + " Max: " + ChatColor.DARK_GREEN + vectorToString(region.getMaximumPoint()),
+				ChatColor.GREEN + "World: " + ChatColor.DARK_GREEN + plotWorld.getName() + ChatColor.GREEN + " Min: " + ChatColor.DARK_GREEN + vectorToString(region.getMinimumPoint()) + ChatColor.GREEN + " Max: " + ChatColor.DARK_GREEN + vectorToString(region.getMaximumPoint()),
 				ChatColor.GREEN + "Size: " + ChatColor.DARK_GREEN + width + "x" + length + ChatColor.GREEN + " (Height: " + ChatColor.DARK_GREEN + height + ChatColor.GREEN + ")"
 		};
 		
@@ -147,4 +152,48 @@ public class Plot extends PlotData {
 	private String vectorToString(com.sk89q.worldedit.BlockVector blockVector) {
 		return blockVector.getBlockX() + "," + blockVector.getBlockY() + "," + blockVector.getBlockZ();
 	}
+
+	/* (non-Javadoc)
+	 * @see com.mtihc.regionselfservice.v2.plots.PlotData#setSellCost(double)
+	 */
+	@Override
+	public void setSellCost(double cost) {
+		super.setSellCost(cost);
+		World world = plotWorld.getWorld();
+		Collection<IPlotSignData> values = signs.values();
+		for (IPlotSignData value : values) {
+			if(value.getType() != PlotSignType.FOR_SALE) {
+				continue;
+			}
+			Location loc = value.getBlockVector().toLocation(world);
+			Block block = loc.getBlock();
+			if(block.getState() instanceof Sign) {
+				Sign sign = (Sign) block.getState();
+				sign.setLine(1, String.valueOf(cost));
+			}
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see com.mtihc.regionselfservice.v2.plots.PlotData#setRentCost(double)
+	 */
+	@Override
+	public void setRentCost(double cost) {
+		super.setRentCost(cost);
+		World world = plotWorld.getWorld();
+		Collection<IPlotSignData> values = signs.values();
+		for (IPlotSignData value : values) {
+			if(value.getType() != PlotSignType.FOR_RENT) {
+				continue;
+			}
+			Location loc = value.getBlockVector().toLocation(world);
+			Block block = loc.getBlock();
+			if(block.getState() instanceof Sign) {
+				Sign sign = (Sign) block.getState();
+				sign.setLine(1, String.valueOf(cost));// TODO add time?
+			}
+		}
+	}
+	
+	
 }

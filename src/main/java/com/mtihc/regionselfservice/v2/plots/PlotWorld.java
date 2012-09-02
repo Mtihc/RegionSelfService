@@ -1,5 +1,6 @@
 package com.mtihc.regionselfservice.v2.plots;
 
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Sign;
 
@@ -10,14 +11,14 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 public class PlotWorld {
 
 	protected final PlotManager manager;
-	protected final World world;
+	protected final String worldName;
 	protected final IPlotWorldConfig config;
 	protected final IPlotDataRepository plots;
 	protected final RegionManager regionManager;
 
 	public PlotWorld(PlotManager manager, World world, IPlotWorldConfig config, IPlotDataRepository plots) {
 		this.manager = manager;
-		this.world = world;
+		this.worldName = world.getName();
 		this.config = config;
 		this.plots = plots;
 		
@@ -25,11 +26,11 @@ public class PlotWorld {
 	}
 
 	public String getName() {
-		return world.getName();
+		return worldName;
 	}
 	
 	public World getWorld() {
-		return world;
+		return Bukkit.getWorld(worldName);
 	}
 	
 	public IPlotWorldConfig getConfig() {
@@ -47,7 +48,7 @@ public class PlotWorld {
 	public Plot getPlot(String regionId) {
 		PlotData data = plots.get(regionId);
 		if(data == null) {
-			data = new PlotData(world, regionId, 0, 0);
+			data = new PlotData(regionId, 0, 0);
 		}
 		return createPlot(data);
 	}

@@ -6,31 +6,23 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.Sign;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.BlockVector;
 
-import com.mtihc.regionselfservice.v2.plots.signs.IPlotSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 
 public class PlotData implements ConfigurationSerializable {
 	
-	protected final World world;
 	protected final String regionId;
 	private double sellCost = 0;
 	private double rentCost = 0;
 	protected final Map<BlockVector, IPlotSignData> signs = new HashMap<BlockVector, IPlotSignData>();
 	
-	public PlotData(World world, String regionId, double sellCost, double rentCost) {
-		this(world, regionId, sellCost, rentCost, null);
+	public PlotData(String regionId, double sellCost, double rentCost) {
+		this(regionId, sellCost, rentCost, null);
 	}
 	
-	public PlotData(World world, String regionId, double sellCost, double rentCost, Collection<IPlotSignData> signs) {
-		this.world = world;
+	public PlotData(String regionId, double sellCost, double rentCost, Collection<IPlotSignData> signs) {
 		this.regionId = regionId;
 		this.sellCost = sellCost;
 		this.rentCost = rentCost;
@@ -44,8 +36,6 @@ public class PlotData implements ConfigurationSerializable {
 
 	
 	public PlotData(Map<String, Object> values) {
-		this.world = Bukkit.getWorld(
-				(String) values.get("world"));
 		this.regionId = (String) values.get("region-id");
 		this.sellCost = (Double) values.get("sell-cost");
 		this.rentCost = (Double) values.get("rent-cost");
@@ -68,7 +58,6 @@ public class PlotData implements ConfigurationSerializable {
 	public Map<String, Object> serialize() {
 		Map<String, Object> values = new LinkedHashMap<String, Object>();
 		
-		values.put("world", world.getName());
 		values.put("region-id", regionId);
 		values.put("sell-cost", sellCost);
 		values.put("rent-cost", rentCost);
@@ -85,10 +74,6 @@ public class PlotData implements ConfigurationSerializable {
 		return values;
 	}
 	
-	public World getWorld() {
-		return world;
-	}
-	
 	public boolean isForSale() {
 		return hasSign(PlotSignType.FOR_SALE);
 	}
@@ -99,18 +84,6 @@ public class PlotData implements ConfigurationSerializable {
 	
 	public void setSellCost(double cost) {
 		this.sellCost = cost;
-		Collection<IPlotSignData> values = signs.values();
-		for (IPlotSignData value : values) {
-			if(value.getType() != PlotSignType.FOR_SALE) {
-				continue;
-			}
-			Location loc = value.getBlockVector().toLocation(world);
-			Block block = loc.getBlock();
-			if(block.getState() instanceof Sign) {
-				Sign sign = (Sign) block.getState();
-				sign.setLine(1, String.valueOf(cost));
-			}
-		}
 	}
 	
 	public boolean isForRent() {
@@ -123,18 +96,6 @@ public class PlotData implements ConfigurationSerializable {
 	
 	public void setRentCost(double cost) {
 		this.rentCost = cost;
-		Collection<IPlotSignData> values = signs.values();
-		for (IPlotSignData value : values) {
-			if(value.getType() != PlotSignType.FOR_RENT) {
-				continue;
-			}
-			Location loc = value.getBlockVector().toLocation(world);
-			Block block = loc.getBlock();
-			if(block.getState() instanceof Sign) {
-				Sign sign = (Sign) block.getState();
-				sign.setLine(1, String.valueOf(cost));// TODO add time?
-			}
-		}
 	}
 	
 	public String getRegionId() {
