@@ -27,8 +27,12 @@ public class Plot extends PlotData {
 		super(data.getRegionId(), data.getSellCost(), data.getRentCost());
 		this.plotWorld = plotWorld;
 		this.manager = plotWorld.getPlotManager();
+		
+		// get all sign-data from plot-data
 		Collection<IPlotSignData> signs = data.getSigns();
 		for (IPlotSignData sign : signs) {
+			// set sign-data via setSign method, 
+			// to make sure they're converted
 			setSign(sign);
 		}
 		
@@ -47,27 +51,35 @@ public class Plot extends PlotData {
 	}
 
 	public int getWidth() {
+		// get the ProtectedRegion
 		ProtectedRegion region = getRegion();
 		if(region == null) {
 			return 0;
 		}
-		return Math.abs(region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
+		// calc width from maximum and minimum x
+		return Math.abs(
+				region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
 	}
 	
 	public int getLength() {
+		// get the ProtectedRegion
 		ProtectedRegion region = getRegion();
 		if(region == null) {
 			return 0;
 		}
+		// calc length from maximum and minimum z
 		return Math.abs(region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ()) + 1;
 	}
 	
 	public int getHeight() {
+		// get the ProtectedRegion
 		ProtectedRegion region = getRegion();
 		if(region == null) {
 			return 0;
 		}
-		return Math.abs(region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY()) + 1;
+		// calc height from maximum and minimum y
+		return Math.abs(
+				region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY()) + 1;
 	}
 	
 	public static double getWorth(int width, int length, double blockWorth) {
@@ -83,6 +95,7 @@ public class Plot extends PlotData {
 	}
 
 	public ProtectedRegion getRegion() {
+		// get ProtectedRegion via WorldGuard's RegionManager
 		return plotWorld.getRegionManager().getRegion(regionId);
 	}
 	
@@ -94,12 +107,15 @@ public class Plot extends PlotData {
 	@Override
 	public void setSign(IPlotSignData data) {
 		if(!(data instanceof IPlotSign)) {
+			// not converted yet
 			try {
+				// create sign from sign-data
 				data = data.getType().createPlotSign(this, data);
 			} catch (SignException e) {
 				return;
 			}
 		}
+		// set sign, as sign-data
 		super.setSign(data);
 	}
 
@@ -116,13 +132,14 @@ public class Plot extends PlotData {
 	}
 	
 	public void sendInfo(CommandSender sender) {
+		// get the ProtectedRegion
 		ProtectedRegion region = getRegion();
+		
 		if(region == null) {
 			sender.sendMessage(ChatColor.RED + "Failed to send region info. Region \"" + getRegionId() + "\" doesn't exist.");
+			return;
 		}
 		
-
-
 		int width = getWidth();
 		int length = getLength();
 		int height = getHeight();
@@ -145,11 +162,13 @@ public class Plot extends PlotData {
 				ChatColor.GOLD + "Rent cost: " + ChatColor.YELLOW + rentCost
 		};
 		
+		// send messages with region info
 		sender.sendMessage(wgInfo);
 		sender.sendMessage(info);
 	}
 	
 	private String vectorToString(com.sk89q.worldedit.BlockVector blockVector) {
+		// return BlockVector as string x,y,z
 		return blockVector.getBlockX() + "," + blockVector.getBlockY() + "," + blockVector.getBlockZ();
 	}
 
@@ -159,15 +178,21 @@ public class Plot extends PlotData {
 	@Override
 	public void setSellCost(double cost) {
 		super.setSellCost(cost);
+		// 
+		// update wooden signs
+		// 
 		World world = plotWorld.getWorld();
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
 			if(value.getType() != PlotSignType.FOR_SALE) {
+				// not a for-sale sign
 				continue;
 			}
 			Location loc = value.getBlockVector().toLocation(world);
 			Block block = loc.getBlock();
+			// check if block is still a wooden sign
 			if(block.getState() instanceof Sign) {
+				// update text on sign
 				Sign sign = (Sign) block.getState();
 				sign.setLine(1, String.valueOf(cost));
 			}
@@ -180,15 +205,21 @@ public class Plot extends PlotData {
 	@Override
 	public void setRentCost(double cost) {
 		super.setRentCost(cost);
+		// 
+		// update wooden signs
+		// 
 		World world = plotWorld.getWorld();
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
 			if(value.getType() != PlotSignType.FOR_RENT) {
+				// not a for-rent sign
 				continue;
 			}
 			Location loc = value.getBlockVector().toLocation(world);
 			Block block = loc.getBlock();
+			// check if block is still a wooden sign
 			if(block.getState() instanceof Sign) {
+				// update text on sign
 				Sign sign = (Sign) block.getState();
 				sign.setLine(1, String.valueOf(cost));// TODO add time?
 			}

@@ -13,6 +13,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.mtihc.regionselfservice.v2.plots.signs.ForRentSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSignData;
+import com.sk89q.minecraft.util.commands.CommandException;
+import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 
 public abstract class PlotManager {
@@ -25,6 +27,7 @@ public abstract class PlotManager {
 	
 	protected final JavaPlugin plugin;
 	protected final WorldGuardPlugin worldGuard;
+	private WorldEditPlugin worldEdit;
 	protected final IEconomy economy;
 	protected final IPlotManagerConfig config;
 	protected final IPlotWorldConfig defaultConfig;
@@ -37,6 +40,11 @@ public abstract class PlotManager {
 	public PlotManager(JavaPlugin plugin, WorldGuardPlugin worldGuard, IEconomy economy, IPlotManagerConfig config, IPlotWorldConfig defaultConfig, IPlotPermission perms) {
 		this.plugin = plugin;
 		this.worldGuard = worldGuard;
+		try {
+			this.worldEdit = worldGuard.getWorldEdit();
+		} catch (CommandException e) {
+			throw new IllegalArgumentException("Couldn't find WorldEdit.", e);
+		}
 		this.economy = economy;
 		this.config = config;
 		this.defaultConfig = defaultConfig;
@@ -74,6 +82,10 @@ public abstract class PlotManager {
 
 	public WorldGuardPlugin getWorldGuard() {
 		return worldGuard;
+	}
+	
+	public WorldEditPlugin getWorldEdit() {
+		return worldEdit;
 	}
 	
 	public IEconomy getEconomy() {

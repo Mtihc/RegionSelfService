@@ -9,6 +9,7 @@ import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
@@ -24,8 +25,6 @@ import com.mtihc.regionselfservice.v2.plots.exceptions.PlotBoundsException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotControlException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
-import com.sk89q.minecraft.util.commands.CommandException;
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.bukkit.selections.Selection;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.domains.DefaultDomain;
@@ -48,21 +47,26 @@ public class PlotControl {
 		return mgr;
 	}
 	
-	
-	
-	
 	public int getRegionCountOfPlayer(World world, String playerName) {
+		// get WorldGuard's region manager
 		RegionManager regionManager = mgr.getPlotWorld(world.getName()).getRegionManager();
 		
+		// get online player
 		Player p = Bukkit.getPlayerExact(playerName);
 		if(p != null) {
+			// when player is online, use WorldGuard's method of counting regions
 			return regionManager.getRegionCountOfPlayer(mgr.getWorldGuard().wrapPlayer(p)); 
 		}
 		
+		// player is offline
+		
+		// get all regions
 		Collection<ProtectedRegion> regions = regionManager.getRegions().values();
 		if(regions == null || regions.isEmpty()) {
 			return 0;
 		}
+		
+		// count owned regions
 		int count = 0;
 		for (ProtectedRegion region : regions) {
 			if(region.isOwner(playerName.toLowerCase())) {
@@ -89,7 +93,11 @@ public class PlotControl {
 	}
 	
 	public static Sign getTargetSign(Player player) {
+		// get targeted block
 		Block block = player.getTargetBlock(getInvisibleBlocks(), 8);
+		
+		// check if block is a wooden sign, 
+		// return null otherwise
 		if(block.getState() instanceof Sign) {
 			return (Sign) block.getState();
 		}
@@ -98,41 +106,74 @@ public class PlotControl {
 		}
 	}
 	
+	public Set<String> getPotentialHomeless(World world, Set<String> names) {
+		HashSet<String> result = new HashSet<String>();
+		if(!names.isEmpty()) {
+			// region has owners, 
+			// iterate over owners
+			for (String ownerName : names) {
+				// count regions of owner
+				int ownerRegionCount = getRegionCountOfPlayer(world, ownerName);
+				if(ownerRegionCount - 1 == 0) {
+					// player would become homeless
+					result.add(ownerName);
+				}
+				
+			}
+			
+		}
+		return result;
+	}
 	
 	public void buy(Player player) throws PlotControlException {
-		// get sign (is targeting ForSale sign?)
+		// get targeted sign
 		Sign sign = getTargetSign(player);
 		if(sign == null) {
 			throw new PlotControlException("You're not looking at a wooden sign.");
 		}
+		
 		BlockVector coords = sign.getLocation().toVector().toBlockVector();
 		PlotWorld world = mgr.getPlotWorld(player.getWorld().getName());
 		Plot plot;
 		IPlotSign plotSign = null;
 		
 		try {
+			// try to get the plot-object via wooden sign, 
+			// the sign should probably have the region name on the last 2 lines
 			plot = world.getPlot(sign);
 		} catch (SignException e) {
 			throw new PlotControlException("You're not looking at a valid sign: " + e.getMessage(), e);
 		}
 		
+		
 		if(plot != null) {
+			// couldn't find plot-object using the targeted sign.
+			// The plot-data was probably deleted.
 			plotSign = (IPlotSign) plot.getSign(coords);
 		}
+		else {
+			throw new PlotControlException("Couldn't find plot information.");
+		}
 		
-		if(plotSign == null || plotSign.getType() != PlotSignType.FOR_SALE) {
+		
+		if(plotSign == null) {
+			throw new PlotControlException("Couldn't find plot-sign information.");
+		}
+		
+		if(plotSign.getType() != PlotSignType.FOR_SALE) {
+			// plot-sign is not a for-sale sign
 			throw new PlotControlException("You're not looking at a for-sale sign.");
 		}
 		
-		// get region (still exists?)
+		// get ProtectedRegion
 		ProtectedRegion region = plot.getRegion();
 		if(region == null) {
-			throw new PlotControlException("Sorry, the region doesn't exist.");
+			throw new PlotControlException("Sorry, the region doesn't exist anymore.");
 		}
 
-		
+		// not for sale?
 		if(!plot.isForSale()) {
-			throw new PlotControlException("Sorry, region \"" + plot.getRegionId() + "\" isn't for sale. This is probably and old sign.");
+			throw new PlotControlException("Sorry, region \"" + plot.getRegionId() + "\" isn't for sale. This is probably an old sign.");
 		}
 
 		// already owner?
@@ -140,7 +181,11 @@ public class PlotControl {
 			throw new PlotControlException("You already own this region.");
 		}
 		
-		// has player reached max regions, or bypass
+
+		// 
+		// Check if player has too many regions
+		// or special permission
+		// 
 		int regionCount = getRegionCountOfPlayer(world.getWorld(), player.getName());
 		int regionMax = world.getConfig().getMaxRegionCount();
 		boolean bypassMax = player.hasPermission(
@@ -150,39 +195,41 @@ public class PlotControl {
 			throw new PlotControlException("You already own " + regionCount + " regions (max: " + regionMax + ").");
 		}
 		
-
+		
+		
+		
 		// get region cost
 		double cost = plot.getSellCost();
 		
-		// if reserve-free-regions is enabled: and cost is 0, then  
-		// check regionCount == 0
+		// 
+		// check if it's a free region, 
+		// and if it's reserved, 
+		// and if player already has a region
+		// 
 		boolean reserve = world.getConfig().isReserveFreeRegionsEnabled();
 		if(reserve && cost <= 0 && regionCount > 0) {
 			throw new PlotControlException("Free regions are reserved for new players.");
 		}
 		
-		// check if players would become homless after sale
-		// this is part of preventing cheating with free regions
+		
+		
+		// 
+		// Check if players would become homless after sale.
+		// This is part of preventing cheating with free regions.
+		// 
 		Set<String> owners = region.getOwners().getPlayers();
 		int ownerCount = owners.size();
 		
 		if(reserve) {
-
-			if(ownerCount > 0) {
-				String homeless = "";
-				for (String ownerName : owners) {
-					int ownerRegionCount = getRegionCountOfPlayer(world.getWorld(), ownerName);
-					if(ownerRegionCount - 1 == 0) {
-						homeless += ", " + ownerName;
-					}
-					
+			Set<String> homeless = getPotentialHomeless(world.getWorld(), owners);
+			if(!homeless.isEmpty()) {
+				String homelessString = "";
+				for (String string : homeless) {
+					homelessString += ", " + string;
 				}
-				if(!homeless.isEmpty()) {
-					homeless = homeless.substring(2);
-					throw new PlotControlException("Sorry, you can't buy this region. The following players would become homeless: " + homeless);
-				}
+				homelessString = homelessString.substring(2);// remove comma and space
+				throw new PlotControlException("Sorry, you can't buy this region. The following players would become homeless: " + homelessString);
 			}
-			
 		}
 		
 		// check bypasscost || pay for region
@@ -230,7 +277,7 @@ public class PlotControl {
 		
 		
 		
-		// delete if possible, otherwise just save changes
+		// delete plot-info if possible, otherwise just save changes
 		// (a plot can't be deleted when there's still active renters)
 		if(!plot.delete()) {
 			plot.save();
@@ -243,42 +290,24 @@ public class PlotControl {
 		// TODO
 	}
 	
-	public void define(Player player, String regionId) throws PlotControlException {
-		PlotWorld plotWorld = mgr.getPlotWorld(player.getWorld().getName());
-		define(player, regionId, plotWorld.getConfig().getDefaultBottomY(), plotWorld.getConfig().getDefaultTopY());
-	}
-	
-	public void define(Player player, String regionId, int bottomY, int topY) throws PlotControlException {
-		WorldEditPlugin we; 
-		try {
-			we = mgr.getWorldGuard().getWorldEdit();
-		} catch (CommandException e) {
-			throw new PlotControlException("Failed to get WorldEdit: " + e.getMessage(), e);
-		}
-		
-		Selection sel = we.getSelection(player);
+	private Selection getSelection(Player player) throws PlotControlException {
+		Selection sel = mgr.getWorldEdit().getSelection(player);
 		if(sel == null || sel.getMaximumPoint() == null || sel.getMinimumPoint() == null) {
 			throw new PlotControlException("Select a region first. Use WorldEdit's command: " + ChatColor.LIGHT_PURPLE + "//wand");
 		}
-		
-		World w = sel.getWorld();
-		if(!w.getName().equals(player.getWorld().getName())) {
-			throw new PlotControlException("You're in a different world than your region selection. Go back to \"" + w.getName() + "\".");
-		}
-		
-		PlotWorld world = mgr.getPlotWorld(w.getName());
-		RegionManager regionManager = world.getRegionManager();
-		
-		if(regionManager.hasRegion(regionId)) {
-			throw new PlotControlException("Region \"" + regionId + "\" already exists.");
-		}
-		
-		if(!isValidRegionName(regionId)) {
-			throw new PlotControlException("Invalid region name \"" + regionId + "\". Try a different name.");
-		}
-		//-----------------------------------------
+		return sel;
+	}
+	
+	private ProtectedRegion defineRegion(PlotWorld plotWorld, Player player, String regionId, Selection sel, int bottomY, int topY) throws PlotControlException {
+		return defineRegion(plotWorld, player, regionId, sel, bottomY, topY, null);
+	}
+	
+	private ProtectedRegion defineRegion(PlotWorld plotWorld, Player player, String regionId, Selection sel, int bottomY, int topY, ProtectedRegion existing) throws PlotControlException {
 		int by;
 		int ty;
+		// If value is -1, use exact selection, 
+		// otherwise use specified value.
+		// Specified value will be default value from config, or arguments from command
 		if(bottomY <= -1) {
 			by = sel.getMinimumPoint().getBlockY();
 		}
@@ -292,76 +321,102 @@ public class PlotControl {
 			ty = topY;
 		}
 		
+		// switch values if necessary
 		if(ty < by) {
 			int y = ty;
 			ty = by;
 			by = y;
 		}
 		
-
-		BlockVector min = new BlockVector(sel.getMinimumPoint().getBlockX(), by, sel.getMinimumPoint().getBlockZ());
-		BlockVector max = new BlockVector(sel.getMaximumPoint().getBlockX(), ty, sel.getMaximumPoint().getBlockZ());
-
-		int width = Math.abs(max.getBlockX() - min.getBlockX()) + 1;
-		int length = Math.abs(max.getBlockZ() - min.getBlockZ()) + 1;
-		int height = Math.abs(topY - bottomY) + 1;
-		
-		int minY = world.getConfig().getMinimumY();
-		int maxY = world.getConfig().getMaximumY();
-		int minHeight = world.getConfig().getMinimumHeight();
-		int maxHeight = world.getConfig().getMaximumHeight();
-		int minWidthLength = world.getConfig().getMinimumWidthLength();
-		int maxWidthLength = world.getConfig().getMaximumWidthLength();
-		//
-		// check min max
-		//
 		if(!player.hasPermission(mgr.getPermissions().getPermission(PlotAction.CREATE_ANYSIZE))) {
+			
+			int width = sel.getWidth();
+			int length = sel.getLength();
+			int height = sel.getHeight();
+			
+			int minY = plotWorld.getConfig().getMinimumY();
+			int maxY = plotWorld.getConfig().getMaximumY();
+			int minHeight = plotWorld.getConfig().getMinimumHeight();
+			int maxHeight = plotWorld.getConfig().getMaximumHeight();
+			int minWidthLength = plotWorld.getConfig().getMinimumWidthLength();
+			int maxWidthLength = plotWorld.getConfig().getMaximumWidthLength();
+			
+			// check min width/length/height
 			if(width < minWidthLength || length < minWidthLength || height < minHeight) {
 				throw new PlotBoundsException(
 						PlotBoundsException.Type.SELECTION_TOO_SMALL, 
 						width, length, height, minWidthLength, maxWidthLength, minHeight, maxHeight);
 			}
+			// check max width/length/height
 			else if(width > maxWidthLength || length > maxWidthLength || height > maxHeight) {
 				throw new PlotBoundsException(
 						PlotBoundsException.Type.SELECTION_TOO_BIG, 
 						width, length, height, maxWidthLength, maxWidthLength, minHeight, maxHeight);
 			}
+			// check maxY
 			if(topY > maxY) {
 				throw new PlotBoundsException(
 						PlotBoundsException.Type.SELECTION_TOO_HIGH, 
 						topY, bottomY, minY, maxY);
 			}
+			// check minY
 			if(bottomY < minY) {
 				throw new PlotBoundsException(
 						PlotBoundsException.Type.SELECTION_TOO_LOW, 
 						topY, bottomY, minY, maxY);
 			}
 		}
-		//--------------------
+		
+		
+		
+		
+		
+		
+		Location min = sel.getMinimumPoint();
+		Location max = sel.getMaximumPoint();
 		// create protected region
 		ProtectedCuboidRegion region = new ProtectedCuboidRegion(
 				regionId, 
-				new com.sk89q.worldedit.BlockVector(
-						min.getBlockX(), min.getBlockY(), min.getBlockZ()), 
-				new com.sk89q.worldedit.BlockVector(
-						max.getBlockX(), max.getBlockY(), max.getBlockZ()));
+				new com.sk89q.worldedit.BlockVector(min.getBlockX(), bottomY, min.getBlockZ()), 
+				new com.sk89q.worldedit.BlockVector(max.getBlockX(), topY, max.getBlockZ()));
+		
+		if(existing != null) {
+			// redefining region, so keep existing values
+			region.setFlags(existing.getFlags());
+			region.setMembers(existing.getMembers());
+			region.setOwners(existing.getOwners());
+			region.setPriority(existing.getPriority());
+			try {
+				region.setParent(existing.getParent());
+			} catch (CircularInheritanceException e) {
+				// ignore error
+			}
+		}
 		
 		
-		boolean allowOverlap = world.getConfig().isOverlapUnownedRegionAllowed();
-		if(!allowOverlap && overlapsUnownedRegion(region, w, player)) {
+		
+		
+		
+		boolean allowOverlap = plotWorld.getConfig().isOverlapUnownedRegionAllowed();
+		if(!allowOverlap && overlapsUnownedRegion(region, plotWorld.getWorld(), player)) {
+			// overlapping is not allowed
 			throw new PlotControlException("Your selection overlaps with someone else's region.");
 		}
-		// TODO this needs another look-over?
+		
+		// TODO this needs another look-over? 
+		// Why not do automatic parent, outside else-statement?
+		// What's up with that permission?
 		else {
-			// not overlapping or it's allowed to overlap unowned regions
-			boolean doAutomaticParent = world.getConfig().isAutomaticParentEnabled();
+			// not overlapping or it's allowed to overlap
+			
+			boolean doAutomaticParent = plotWorld.getConfig().isAutomaticParentEnabled();
 			boolean allowAnywhere = player.hasPermission(
 					mgr.getPermissions().getPermission(PlotAction.CREATE_ANYWHERE));
 			
 			ProtectedRegion parentRegion;
 			if(!allowAnywhere || doAutomaticParent) {
 				// we need a parent
-				parentRegion = getAutomaticParentRegion(region, w, player);
+				parentRegion = getAutomaticParentRegion(region, plotWorld.getWorld(), player);
 				
 				if(parentRegion == null) {
 					if(!allowAnywhere) {
@@ -381,8 +436,44 @@ public class PlotControl {
 				}
 			}
 		}
+		return region;
+	}
+	
+	public void define(Player player, String regionId) throws PlotControlException {
+		// get player's selection
+		Selection sel = getSelection(player);
+		// get plot-world information
+		PlotWorld plotWorld = mgr.getPlotWorld(sel.getWorld().getName());
 		
-		boolean enableCost = world.getConfig().isCreateCostEnabled();
+		
+		
+		// define, using default bottom y and top y
+		define(player, regionId, plotWorld.getConfig().getDefaultBottomY(), plotWorld.getConfig().getDefaultTopY());
+	}
+	
+	public void define(Player player, String regionId, int bottomY, int topY) throws PlotControlException {
+		// get player's selection
+		Selection sel = getSelection(player);
+		// get plot-world information
+		PlotWorld plotWorld = mgr.getPlotWorld(sel.getWorld().getName());
+		
+		
+		
+		// get world's RegionManager of WorldGuard
+		RegionManager regionManager = plotWorld.getRegionManager();
+		
+		// check region existance
+		if(regionManager.hasRegion(regionId)) {
+			throw new PlotControlException("Region \"" + regionId + "\" already exists.");
+		}
+		// check if valid region name, just like WorldGuard
+		if(!isValidRegionName(regionId)) {
+			throw new PlotControlException("Invalid region name \"" + regionId + "\". Try a different name.");
+		}
+		
+		ProtectedRegion region = defineRegion(plotWorld, player, regionId, sel, bottomY, topY);
+		
+		boolean enableCost = plotWorld.getConfig().isCreateCostEnabled();
 		boolean bypassCost = !enableCost;
 		if (!bypassCost
 				&& player.hasPermission(
@@ -390,7 +481,7 @@ public class PlotControl {
 			bypassCost = true;
 		}
 		//-----------------------------------
-		double cost = getWorth(region, world.getConfig().getBlockWorth());
+		double cost = getWorth(region, plotWorld.getConfig().getBlockWorth());
 		
 		if(!bypassCost) {
 			double bal = mgr.getEconomy().getBalance(player.getName());
@@ -403,7 +494,7 @@ public class PlotControl {
 		// who will get the money ?
 		Set<String> depositTo = new HashSet<String>();
 		// who are the default owners in the config ?
-		List<String> ownerList = world.getConfig().getDefaultOwners();
+		List<String> ownerList = plotWorld.getConfig().getDefaultOwners();
 		
 		DefaultDomain ownersDomain;
 		
@@ -460,7 +551,7 @@ public class PlotControl {
 			throw new PlotControlException("Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage(), e);
 		}
 		// send region info to indicate it was successful
-		world.getPlot(regionId).sendInfo(player);
+		plotWorld.getPlot(regionId).sendInfo(player);
 	}
 	
 	
@@ -471,26 +562,12 @@ public class PlotControl {
 	}
 	
 	public void redefine(Player player, String regionId, int bottomY, int topY) throws PlotControlException {
-		// TODO
-		WorldEditPlugin we; 
-		try {
-			we = mgr.getWorldGuard().getWorldEdit();
-		} catch (CommandException e) {
-			throw new PlotControlException("Failed to get WorldEdit: " + e.getMessage(), e);
-		}
-		
-		Selection sel = we.getSelection(player);
-		if(sel == null || sel.getMaximumPoint() == null || sel.getMinimumPoint() == null) {
-			throw new PlotControlException("Select a region first. Use WorldEdit's command: " + ChatColor.LIGHT_PURPLE + "//wand");
-		}
-		
-		World w = sel.getWorld();
-		if(!w.getName().equals(player.getWorld().getName())) {
-			throw new PlotControlException("You're in a different world than your region selection. Go back to \"" + w.getName() + "\".");
-		}
-		
-		PlotWorld world = mgr.getPlotWorld(w.getName());
-		RegionManager regionManager = world.getRegionManager();
+		// get player's selection
+		Selection sel = getSelection(player);
+		// get plot-world information
+		PlotWorld plotWorld = mgr.getPlotWorld(sel.getWorld().getName());
+				
+		RegionManager regionManager = plotWorld.getRegionManager();
 
 		ProtectedRegion region = regionManager.getRegion(regionId);
 		
@@ -503,104 +580,9 @@ public class PlotControl {
 			throw new PlotControlException("You can only redefine you own regions.");
 		}
 		
-		int by;
-		int ty;
-		if(bottomY <= -1) {
-			by = sel.getMinimumPoint().getBlockY();
-		}
-		else {
-			by = bottomY;
-		}
-		if(topY <= -1) {
-			ty = sel.getMaximumPoint().getBlockY();
-		}
-		else {
-			ty = topY;
-		}
+		region = defineRegion(plotWorld, player, regionId, sel, bottomY, topY, region);
 		
-		if(ty < by) {
-			int y = ty;
-			ty = by;
-			by = y;
-		}
-		
-
-		BlockVector min = new BlockVector(sel.getMinimumPoint().getBlockX(), by, sel.getMinimumPoint().getBlockZ());
-		BlockVector max = new BlockVector(sel.getMaximumPoint().getBlockX(), ty, sel.getMaximumPoint().getBlockZ());
-
-		int width = Math.abs(max.getBlockX() - min.getBlockX()) + 1;
-		int length = Math.abs(max.getBlockZ() - min.getBlockZ()) + 1;
-		int height = Math.abs(topY - bottomY) + 1;
-		
-		int minY = world.getConfig().getMinimumY();
-		int maxY = world.getConfig().getMaximumY();
-		int minHeight = world.getConfig().getMinimumHeight();
-		int maxHeight = world.getConfig().getMaximumHeight();
-		int minWidthLength = world.getConfig().getMinimumWidthLength();
-		int maxWidthLength = world.getConfig().getMaximumWidthLength();
-		//
-		// check min max
-		//
-		if(!player.hasPermission(mgr.getPermissions().getPermission(PlotAction.CREATE_ANYSIZE))) {
-			if(width < minWidthLength || length < minWidthLength || height < minHeight) {
-				throw new PlotBoundsException(
-						PlotBoundsException.Type.SELECTION_TOO_SMALL, 
-						width, length, height, minWidthLength, maxWidthLength, minHeight, maxHeight);
-			}
-			else if(width > maxWidthLength || length > maxWidthLength || height > maxHeight) {
-				throw new PlotBoundsException(
-						PlotBoundsException.Type.SELECTION_TOO_BIG, 
-						width, length, height, maxWidthLength, maxWidthLength, minHeight, maxHeight);
-			}
-			if(topY > maxY) {
-				throw new PlotBoundsException(
-						PlotBoundsException.Type.SELECTION_TOO_HIGH, 
-						topY, bottomY, minY, maxY);
-			}
-			if(bottomY < minY) {
-				throw new PlotBoundsException(
-						PlotBoundsException.Type.SELECTION_TOO_LOW, 
-						topY, bottomY, minY, maxY);
-			}
-		}
-		
-		
-		boolean allowOverlap = world.getConfig().isOverlapUnownedRegionAllowed();
-		if(!allowOverlap && overlapsUnownedRegion(region, w, player)) {
-			throw new PlotControlException("Your selection overlaps with someone else's region.");
-		}
-		// TODO this needs another look-over?
-		else {
-			// not overlapping or it's allowed to overlap unowned regions
-			boolean doAutomaticParent = world.getConfig().isAutomaticParentEnabled();
-			boolean allowAnywhere = player.hasPermission(
-					mgr.getPermissions().getPermission(PlotAction.CREATE_ANYWHERE));
-			
-			ProtectedRegion parentRegion;
-			if(!allowAnywhere || doAutomaticParent) {
-				// we need a parent
-				parentRegion = getAutomaticParentRegion(region, w, player);
-				
-				if(parentRegion == null) {
-					if(!allowAnywhere) {
-						// automatic parent was not found, but it's required...
-						// because player can only create regions inside owned existing regions.
-						throw new PlotControlException("You can only claim regions inside existing regions that you own");
-					}
-				}
-				else if(doAutomaticParent) {
-					// found parent region,
-					// and according to the configuration,
-					// we should do automatic parenting
-					try {
-						region.setParent(parentRegion);
-					} catch (CircularInheritanceException e) {
-					}
-				}
-			}
-		}
-		
-		boolean enableCost = world.getConfig().isCreateCostEnabled();
+		boolean enableCost = plotWorld.getConfig().isCreateCostEnabled();
 		boolean bypassCost = !enableCost;
 		if (!bypassCost
 				&& player.hasPermission(
@@ -608,6 +590,15 @@ public class PlotControl {
 			bypassCost = true;
 		}
 		
+		// TODO pay or refund.. 
+		// TODO accept refund/payment with conversation API, otherwise, don't save
+
+		try {
+			regionManager.addRegion(region);
+			regionManager.save();
+		} catch (ProtectionDatabaseException e) {
+			throw new PlotControlException("Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage(), e);
+		}
 	}
 	
 	public void delete(CommandSender sender, World world, String regionId) throws PlotControlException {
@@ -616,6 +607,25 @@ public class PlotControl {
 		if(plot == null) {
 			throw new PlotControlException("Region \"" + regionId + "\" doesn't exist.");
 		}
+		
+		if(plotWorld.getConfig().isReserveFreeRegionsEnabled()) {
+			ProtectedRegion region = plot.getRegion();
+			if(region != null) {
+				Set<String> owners = region.getOwners().getPlayers();
+				Set<String> homeless = getPotentialHomeless(world, owners);
+				if(!homeless.isEmpty()) {
+					String homelessString = "";
+					for (String string : homeless) {
+						homelessString += ", " + string;
+					}
+					homelessString = homelessString.substring(2);//remove comma and space
+					throw new PlotControlException("Sorry, you can't delete this region. The following players would become homeless: " + homelessString);
+				}
+			}
+		}
+		
+		
+		// TODO accept delete, with conversation API
 		if(!plot.delete()) {
 			throw new PlotControlException("Failed to delete region \"" + regionId + "\". There might still be players renting that region.");
 		}

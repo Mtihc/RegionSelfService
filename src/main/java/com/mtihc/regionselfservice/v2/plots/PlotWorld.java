@@ -1,5 +1,8 @@
 package com.mtihc.regionselfservice.v2.plots;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Sign;
@@ -66,5 +69,15 @@ public class PlotWorld {
 		return regionManager;
 	}
 
+	public Set<String> getPotentialHomeless(Set<String> names) {
+		Set<String> result = new HashSet<String>();
+		World world = getWorld();
+		for (String name : names) {
+			int count = manager.control.getRegionCountOfPlayer(world, name);
+			if(count - 1 <= 0) {
+				result.add(name);
+			}
+		}
+	}
 	
 }

@@ -2,9 +2,12 @@ package com.mtihc.regionselfservice.v2.plots;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -26,7 +29,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 class PlotListener implements Listener {
 
 	private PlotManager mgr;
-
+	
 	PlotListener(PlotManager mgr) {
 		this.mgr = mgr;
 	}
@@ -57,7 +60,8 @@ class PlotListener implements Listener {
 		}
 		
 		// plot world
-		PlotWorld plotWorld = mgr.getPlotWorld(sign.getWorld().getName());
+		World world = sign.getWorld();
+		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
 		
 		Plot plot;
 		IPlotSignData plotSign;
@@ -83,7 +87,6 @@ class PlotListener implements Listener {
 			return;
 		}
 		
-		
 		ProtectedRegion region = plot.getRegion();
 		if(region == null) {
 			player.sendMessage(ChatColor.RED + "Failed to create " + type.name() + " sign. ");
@@ -98,7 +101,7 @@ class PlotListener implements Listener {
 		
 		IPlotPermission perms = mgr.getPermissions();
 		IPlotWorldConfig config = plot.getPlotWorld().getConfig();
-		
+
 		if(type == PlotSignType.FOR_RENT) {
 			
 			// check permission to rent out
@@ -183,12 +186,6 @@ class PlotListener implements Listener {
 				return;
 			}
 			
-			// TODO count regions of all owners
-			// You can't sell a player's last region, 
-			// (if free regions are reserved for players with no regions || configured no homeless)
-			// because players would be able to work together, to mess up your server
-			// send message: "You can't sell this region because the following players would be homeless."
-			
 			// check permission to sell, unowned regions
 			if(!isOwner && !player.hasPermission(
 					perms.getPermission(PlotAction.SELL_ANYREGION))) {
@@ -196,6 +193,24 @@ class PlotListener implements Listener {
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
 				return;
+			}
+
+			
+			// You can't sell a player's last region, 
+			// because players would be able to work together, to mess up your server
+			if(plotWorld.getConfig().isReserveFreeRegionsEnabled()) {
+				Set<String> owners = region.getOwners().getPlayers();
+				Set<String> homeless = mgr.getControl().getPotentialHomeless(world, owners);
+				if(!homeless.isEmpty()) {
+					String homelessString = "";
+					for (String string : homeless) {
+						homelessString += ", " + string;
+					}
+					homelessString = homelessString.substring(2);
+					player.sendMessage(ChatColor.RED + "Sorry, you can't sell this region. The following players would become homeless: " + homelessString);
+				}
+				
+				
 			}
 			
 			// check permission to sell, outside the region
@@ -343,7 +358,14 @@ class PlotListener implements Listener {
 			return;// event cancelled
 		}
 		if(!(block.getState() instanceof Sign)) {
-			// TODO check if there's a sign attached to this block
+			// check if there's a sign attached to this block
+			// (not very time-efficient)
+			onBlockProtect(block.getRelative(BlockFace.UP), event);
+			onBlockProtect(block.getRelative(BlockFace.EAST), event);
+			onBlockProtect(block.getRelative(BlockFace.SOUTH), event);
+			onBlockProtect(block.getRelative(BlockFace.WEST), event);
+			onBlockProtect(block.getRelative(BlockFace.NORTH), event);
+			
 			return;// not a sign
 		}
 		Sign sign = (Sign) block.getState();
