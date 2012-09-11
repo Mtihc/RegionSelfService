@@ -78,6 +78,7 @@ public class PlotWorld {
 				result.add(name);
 			}
 		}
+		return result;
 	}
 	
 }
