@@ -1,0 +1,40 @@
+# --------------------------------------------------
+# Default World Config:
+# --------------------------------------------------
+# Copy this file to a world's folder. And 
+# change the settings. 
+# 
+# Remove settings, if you want them to be  
+# inherited from the Default World Config. 
+# --------------------------------------------------
+
+reserve_free_regions: true
+
+block_worth: 2.20
+
+sell_min_block_cost: 0
+sell_max_block_cost: 2
+
+rent_min_block_cost: 0
+rent_max_block_cost: 0.002
+
+max_regions_per_player: -1
+
+allow_overlap_unowned_regions: true
+
+enable_create_cost: false
+
+region_defaults:
+  owners: [Mtihc, Steve]
+  bottom_y: 5
+  top_y: 255
+  parent_automatic: false
+
+region_size:
+  minimum_width_length: 8
+  maximum_width_length: 100
+  minimum_height: 8
+  maximum_height: 100
+  minimum_y: 5
+  maximum_y: 255
+

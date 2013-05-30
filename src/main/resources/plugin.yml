@@ -1,10 +1,10 @@
 name: RegionSelfService
 author: Mtihc
 description: Make regions and let new people become owner
-main: com.mtihc.minecraft.regionselfservice.RegionSelfServicePlugin
+main: com.mtihc.regionselfservice.v2.plugin.SelfServicePlugin
 depend: [WorldEdit, WorldGuard]
 softdepend: [Vault]
-version: 1.7.1
+version: 2.0 alpha
 commands:
     selfservice:
         description: For detailed information, execute /selfservice ?
@@ -30,6 +30,7 @@ permissions:
             selfservice.create.anywhere: true
             selfservice.create.anysize: true
             selfservice.resize: true
+            selfservice.resize.exact: true
             selfservice.resize.anyregion: true
             selfservice.remove: true
             selfservice.remove.anyregion: true
@@ -112,6 +113,11 @@ permissions:
     selfservice.resize:
         default: false
         description: Allows you to resize regions that you own
+    selfservice.resize.exact:
+        default: false
+        description: Allows you to resize regions that you own and override the default top-y and bottom-y.
+        children:
+            selfservice.resize: true
     selfservice.resize.anyregion:
         default: false
         description: Allows you to resize any region
