@@ -354,21 +354,30 @@ class PlotListener implements Listener {
 	}
 	
 	private void onBlockProtect(Block block, Cancellable event) {
+		onBlockProtect(block, event, null);
+	}
+	
+	private void onBlockProtect(Block block, Cancellable event, Block originalBlock) {
 		if(event.isCancelled()) {
 			return;// event cancelled
 		}
 		if(!(block.getState() instanceof Sign)) {
-			// check if there's a sign attached to this block
-			// (not very time-efficient)
-			onBlockProtect(block.getRelative(BlockFace.UP), event);
-			onBlockProtect(block.getRelative(BlockFace.EAST), event);
-			onBlockProtect(block.getRelative(BlockFace.SOUTH), event);
-			onBlockProtect(block.getRelative(BlockFace.WEST), event);
-			onBlockProtect(block.getRelative(BlockFace.NORTH), event);
+			if(originalBlock != null) {
+				// check if there's a sign attached to this block
+				onBlockProtect(block.getRelative(BlockFace.UP), event, block);
+				onBlockProtect(block.getRelative(BlockFace.EAST), event, block);
+				onBlockProtect(block.getRelative(BlockFace.SOUTH), event, block);
+				onBlockProtect(block.getRelative(BlockFace.WEST), event, block);
+				onBlockProtect(block.getRelative(BlockFace.NORTH), event, block);
+			}
 			
 			return;// not a sign
 		}
 		Sign sign = (Sign) block.getState();
+		Block attached = block.getRelative(((org.bukkit.material.Sign) sign.getData()).getAttachedFace());
+		if(!attached.getLocation().equals(originalBlock.getLocation())) {
+			return;
+		}
 		
 		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, sign.getLines());
 		if(type == null) {

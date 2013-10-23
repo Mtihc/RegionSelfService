@@ -19,23 +19,23 @@ public class PlotCommand extends SimpleCommand {
 	private PlotManager mgr;
 
 	public PlotCommand(PlotManager manager, ICommand parent, String[] aliases) {
-		super(parent, aliases, "", null, "This is the main plot command.", null);
+		super(parent, aliases, "", "This is the main plot command.", new String[0], null);
 		
 		this.mgr = manager;
 		
 		// setNested
-		setNested("buy");
-		setNested("count");
-		setNested("define");
-		setNested("defineExact");
-		setNested("redefine");
-		setNested("redefineExact");
-		setNested("delete");
-		setNested("info");
-		setNested("reload");
+		addNested("buy");
+		addNested("count");
+		addNested("define");
+		addNested("defineExact");
+		addNested("redefine");
+		addNested("redefineExact");
+		addNested("delete");
+		addNested("info");
+		addNested("reload");
 		//setNested("rent");
 		//setNested("sell");
-		setNested("worth");
+		addNested("worth");
 	}
 	
 	private Player getPlayer(CommandSender sender) throws CommandException {

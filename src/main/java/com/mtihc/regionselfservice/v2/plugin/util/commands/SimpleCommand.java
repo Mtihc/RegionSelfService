@@ -1,11 +1,12 @@
 package com.mtihc.regionselfservice.v2.plugin.util.commands;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -14,42 +15,58 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 
+/**
+ * Class representing a command. 
+ * 
+ * <p>This class can be extended to add nested commands. 
+ * It is recommended to add nested commands in the constructor, 
+ * using any of the overloads of method <code>addNested</code>.</p>
+ * 
+ * @author Mitch
+ *
+ */
 public class SimpleCommand implements ICommand {
 
-	private static final ChatColor COLOR_A = ChatColor.AQUA;
-	private static final ChatColor COLOR_B = ChatColor.DARK_AQUA;
-
 	protected final String label;
-	protected List<String> aliases;
+	protected final Set<String> aliases;
 	protected String argumentSyntax;
-	protected String permission;
 	protected String desc;
 	protected String[] help;
 	
 	protected final Map<String, CommandFactory> factories = new LinkedHashMap<String, CommandFactory>();
 	protected final Set<String> labels = new LinkedHashSet<String>();
+	protected final String perm;
 	
 	protected final ICommand parent;
 	
-	public SimpleCommand(ICommand parent, String[] aliases, String argumentSyntax, String permission, String desc, String[] help) {
+	/**
+	 * Constructor.
+	 * @param parent the parent command
+	 * @param aliases the command aliases. The first alias is considered the command label
+	 * @param argumentSyntax the argument syntax
+	 * @param desc the short command description
+	 * @param help the help messages
+	 */
+	public SimpleCommand(ICommand parent, String[] aliases, String argumentSyntax, String desc, String[] help, String permission) {
 		
 		this.parent = parent;
 		
-		String[] a;
-		try {
-			a = Arrays.copyOfRange(aliases, 1, aliases.length);
-		} catch(Exception e) {
-			a = new String[0];
-		}
 		this.label = aliases[0];
-		this.aliases = Arrays.asList(a);
+		
+		this.aliases = getUnmodifiableAliases(aliases);
+		
 		this.argumentSyntax = argumentSyntax;
-		this.permission = permission;
 		this.desc = desc;
 		this.help = (help == null ? new String[0] : help);
+		this.perm = permission;
 		
+	}
+	
+	public static Set<String> getUnmodifiableAliases(String[] aliases) {
+		Set<String> aliasSet = new LinkedHashSet<String>();
+		Collections.addAll(aliasSet, Arrays.copyOfRange(aliases, 1, aliases.length));
+		return Collections.unmodifiableSet(aliasSet);
 	}
 
 
@@ -64,7 +81,7 @@ public class SimpleCommand implements ICommand {
 	}
 
 	@Override
-	public List<String> getAliases() {
+	public Set<String> getAliases() {
 		return aliases;
 	}
 
@@ -72,15 +89,15 @@ public class SimpleCommand implements ICommand {
 	public String getArgumentSyntax() {
 		return argumentSyntax;
 	}
-	
-	@Override
-	public String getPermission() {
-		return permission;
-	}
 
 	@Override
 	public String getDescription() {
 		return desc;
+	}
+	
+	@Override
+	public String getPermission() {
+		return perm;
 	}
 
 	@Override
@@ -122,20 +139,7 @@ public class SimpleCommand implements ICommand {
 	
 	
 	
-	public void testPermission(CommandSender sender, String perm) throws CommandPermissionException {
-		if(!hasPermission(sender, perm)) {
-			throw new CommandPermissionException("You don't have permission \"" + perm + "\".");
-		}
-	}
 	
-	public boolean hasPermission(CommandSender sender, String perm) {
-		if(perm == null || perm.isEmpty() || sender instanceof ConsoleCommandSender) {
-			return true;
-		}
-		else {
-			return sender.hasPermission(perm);
-		}
-	}
 
 	@Override
 	public void execute(CommandSender sender, String[] args) throws CommandException {
@@ -154,7 +158,12 @@ public class SimpleCommand implements ICommand {
 			ICommand nested = getNested(firstArgument);
 			if(nested == null) {
 				// first argument is not a nested command
-				onCommand(sender, args);
+				if(checkHelpArg(sender, this, args)) {
+					sendHelp(sender, this);
+				}
+				else {
+					onCommand(sender, args);
+				}
 				return;
 			}
 			else {
@@ -166,23 +175,46 @@ public class SimpleCommand implements ICommand {
 					args = new String[0];
 				}
 				
-				String help;
-				try {
-					help = args[0];
-					if(help.equalsIgnoreCase("?") || (help.equalsIgnoreCase("help") && nested.getNested("help") == null)) {
-						sendHelp(sender, nested);
-						return;
-					}
-				} catch(IndexOutOfBoundsException e) {
-					
+				if(checkHelpArg(sender, nested, args)) {
+					sendHelp(sender, nested);
 				}
-				
-				nested.execute(sender, args);
+				else {
+					nested.execute(sender, args);
+				}
 				return;
 			}
 		}
 	}
+	
+	public void testPermission(CommandSender sender, String permission) throws CommandPermissionException {
+		if(permission != null && !sender.hasPermission(permission)) {
+			throw new CommandPermissionException("You're not allowed to execute command /" + getUniqueLabel() + ".");
+		}
+	}
+	
+	private boolean checkHelpArg(CommandSender sender, ICommand command, String[] args) {
+		try {
+			String help = args[0];
+			if(help.equalsIgnoreCase("?") || (help.equalsIgnoreCase("help") && command.getNested("help") == null)) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		} catch(IndexOutOfBoundsException e) {
+			return false;
+		}
+	}
 
+	/**
+	 * Sends help messages to the command sender.
+	 * <p>This method is used in method <code>execute</code>. 
+	 * This method can be overridden to implement different command behavior. 
+	 * But usually the main command simply sends information about it's nested commands.</p>
+	 * @param sender the command sender
+	 * @param args the command arguments
+	 * @throws CommandException thrown when the command could not be executed
+	 */
 	protected void onCommand(CommandSender sender, String[] args) throws CommandException {
 		int page;
 		try {
@@ -205,43 +237,64 @@ public class SimpleCommand implements ICommand {
 	
 	
 	
-	
+	/**
+	 * Adds every method with the <code>Command</code> annotation as nested command.
+	 */
 	protected final void findNestedCommandMethods() {
 
 		Method[] methods = getClass().getMethods();
 		for (Method method : methods) {
 			if(method.isAnnotationPresent(Command.class)) {
-				setNested(method);
+				addNested(method);
 			}
 		}
 	}
 	
-	protected <T extends ICommand> void setNested(Class<T> commandClass, Object... args) {
+	/**
+	 * Adds a nested command using a class reference. The class should implement the <code>ICommand</code> interface.
+	 * @param commandClass the class reference
+	 * @param args the arguments that will be passed to the constructor
+	 */
+	protected <T extends ICommand> void addNested(Class<T> commandClass, Object... args) {
 		CommandFactory f = new CommandObjectFactory(commandClass, args);
 		
 		ICommand cmd = f.getCommand();
-		String lbl = cmd.getLabel();
-		lbl = lbl.toLowerCase();
+		String lbl = cmd.getLabel().toLowerCase();
 		factories.put(lbl, f);
 		labels.add(lbl);
-		List<String> aliases = cmd.getAliases();
+		Set<String> aliases = cmd.getAliases();
 		for (String alias : aliases) {
 			factories.put(alias.toLowerCase(), f);
 		}
 	}
 	
-	protected void setNested(String methodName) {
-		Method method;
+	/**
+	 * Adds a nested command using a method name. The method should have the <code>Command</code> annotation.
+	 * @param methodName the method name
+	 */
+	protected void addNested(String methodName) {
+		Method method = null;
+		Exception exception = null;
 		try {
 			method = getClass().getMethod(methodName, CommandSender.class, String[].class);
-		} catch (Exception e) {
-			Bukkit.getLogger().log(Level.SEVERE, "Couldn't add method \"" + methodName + "\" as subcommand of \"" + getUsage() + "\"", e);
+		} catch (NoSuchMethodException e) {
+			exception = e;
+		} catch(SecurityException e) {
+			exception = e;
+		}
+		
+		if(exception != null) {
+			Bukkit.getLogger().log(Level.SEVERE, "Couldn't add method \"" + methodName + "\" as subcommand of \"" + getUsage() + "\"", exception);
 			return;
 		}
-		setNested(method);
+		addNested(method);
 	}
 	
-	protected void setNested(Method method) {
+	/**
+	 * Adds a nested command using a reference to the method. The method should have the <code>Command</code> annotation.
+	 * @param method the method reference
+	 */
+	protected void addNested(Method method) {
 		if(!method.isAnnotationPresent(Command.class)) {
 			throw new IllegalArgumentException("Method \"" + method.getName() + "\" of class \"" + method.getDeclaringClass().getCanonicalName() + "\" doesn't have the " + Command.class.getName() + " annotation.");
 		}
@@ -265,11 +318,20 @@ public class SimpleCommand implements ICommand {
 	
 	
 	
-	
+	/**
+	 * Helper method to get a command's usage string
+	 * @param command the command
+	 * @return the usage string
+	 */
 	public static String getUsage(ICommand command) {
 		return "/" + getUniqueLabel(command) + " " + command.getArgumentSyntax();
 	}
 	
+	/**
+	 * Helper method to get a command's unique label
+	 * @param command the command
+	 * @return the unique label
+	 */
 	public static String getUniqueLabel(ICommand command) {
 		String lbl = command.getLabel();
 		ICommand cmd = command;
@@ -281,24 +343,25 @@ public class SimpleCommand implements ICommand {
 		return lbl;
 	}
 	
-	public void sendHelp(CommandSender sender, ICommand cmd) throws CommandException {
+	public static void sendHelp(CommandSender sender, ICommand cmd) throws CommandException {
 		sendHelp(sender, cmd, -1);
 	}
 
-	public void sendHelp(CommandSender sender, ICommand cmd, int page) throws CommandException {
+	public static void sendHelp(CommandSender sender, ICommand cmd, int page) throws CommandException {
 		
-		sender.sendMessage(COLOR_B + "Command:" + ChatColor.WHITE + " " + cmd.getUsage());
+		sender.sendMessage(ChatColor.GOLD + "Command:" + ChatColor.WHITE + " " + cmd.getUsage());
 		
 		if(cmd.getDescription() != null) {
-			sender.sendMessage(COLOR_A + cmd.getDescription());
+			sender.sendMessage(ChatColor.YELLOW + cmd.getDescription());
 		}
 		
 		String[] help = cmd.getHelp();
 		if(help != null) {
 			for (String string : help) {
-				sender.sendMessage(COLOR_A + string);
+				sender.sendMessage(ChatColor.YELLOW + string);
 			}
 		}
+		
 		
 		if(cmd.hasNested()) {
 			
@@ -322,22 +385,15 @@ public class SimpleCommand implements ICommand {
 			if (page > totalPages || page < 1) {
 				return;
 			}
-			sender.sendMessage(COLOR_B + "Nested commands (page "
+			sender.sendMessage(ChatColor.GOLD + "Nested commands: (page "
 					+ page + "/" + totalPages + "):");
 			
 			for (int i = startIndex; i < endIndex && i < total; i++) {
 				String lbl = labels[i];
 				ICommand nested = cmd.getNested(lbl);
-				if(hasPermission(sender, nested.getPermission())) {
-					sender.sendMessage(ChatColor.WHITE + nested.getUsage() + COLOR_A + " " + nested.getDescription());
-				}
-				else {
-					i--;
-				}
-				
+				sender.sendMessage(nested.getUsage() + ChatColor.YELLOW + " " + nested.getDescription());
 			}
 			
-			sender.sendMessage(COLOR_B + "Get more specific help: " + ChatColor.WHITE + "Type for example " + "/" + cmd.getUniqueLabel() + " " + labels[startIndex] + " help");
 		}
 		
 	}
@@ -416,17 +472,24 @@ public class SimpleCommand implements ICommand {
 
 		private ICommand newInstance(Constructor<?> constructor) {
 			constructor.setAccessible(true);
+			Exception exception = null;
 			try {
 				return (ICommand) constructor.newInstance(args);
-			} catch (Exception e) {
-
-				Logger.getLogger(getClass().getCanonicalName()).log(
-						Level.SEVERE,
-						"Failed to create command class \""
-								+ commandClass.getCanonicalName() + "\".", e);
-
-				return null;
+			} catch (InstantiationException e) {
+				exception = e;
+			} catch (IllegalAccessException e) {
+				exception = e;
+			} catch (IllegalArgumentException e) {
+				exception = e;
+			} catch (InvocationTargetException e) {
+				exception = e;
 			}
+			Logger.getLogger(getClass().getCanonicalName()).log(
+					Level.SEVERE,
+					"Failed to create command class \""
+							+ commandClass.getCanonicalName() + "\".", exception);
+
+			return null;
 		}
 
 		@Override
@@ -475,31 +538,24 @@ public class SimpleCommand implements ICommand {
 		private Method method;
 		private Command command;
 		private ICommand parent;
-		private String label;
-		private List<String> aliases;
+		private Set<String> aliases;
+		private String perm;
 
 		private CommandMethod(ICommand parent, Method method) {
 			this.parent = parent;
 			this.method = method;
 			this.command = method.getAnnotation(Command.class);
-			
-			String[] aliases = command.aliases();
-			this.label = aliases[0];
-			try {
-				aliases = Arrays.copyOfRange(aliases, 1, aliases.length);
-			} catch (Exception e) {
-				aliases = new String[0];
-			}
-			this.aliases = Arrays.asList(aliases);
+			this.aliases = getUnmodifiableAliases(command.aliases());
+			this.perm = command.perm();
 		}
 
 		@Override
 		public String getLabel() {
-			return label;
+			return command.aliases()[0];
 		}
 
 		@Override
-		public List<String> getAliases() {
+		public Set<String> getAliases() {
 			return aliases;
 		}
 
@@ -507,17 +563,17 @@ public class SimpleCommand implements ICommand {
 		public String getArgumentSyntax() {
 			return command.args();
 		}
-		
-		@Override
-		public String getPermission() {
-			return command.perm();
-		}
 
 		@Override
 		public String getDescription() {
 			return command.desc();
 		}
 
+		@Override
+		public String getPermission() {
+			return perm;
+		}
+		
 		@Override
 		public String[] getHelp() {
 			return command.help();
@@ -527,25 +583,32 @@ public class SimpleCommand implements ICommand {
 		public void execute(CommandSender sender, String[] args)
 				throws CommandException {
 			
-			testPermission(sender, getPermission());
-			
 			Object instance = parent;
+			Exception exception = null;
 			try {
 				method.invoke(instance, sender, args);
-			} catch (Exception e) {
-				if(e.getCause() instanceof CommandException) {
-					throw (CommandException)e.getCause();
-				}
-				else {
-					Logger.getLogger(getClass().getCanonicalName()).log(
-							Level.SEVERE,
-							"Failed to invoke command method \"" + method.getName()
-									+ "\" of class \""
-									+ instance.getClass().getCanonicalName() + "\"", e);
-				}
-				
+			} catch (IllegalAccessException e) {
+				exception = e;
+			} catch (IllegalArgumentException e) {
+				exception = e;
+			} catch (InvocationTargetException e) {
+				exception = e;
 			}
-			return;
+			
+			if(exception == null) {
+				return;
+			}
+			
+			if(exception.getCause() != null && exception.getCause() instanceof CommandException) {
+				throw (CommandException) exception.getCause();
+			}
+			else {
+				Logger.getLogger(getClass().getCanonicalName()).log(
+						Level.SEVERE,
+						"Failed to invoke command method \"" + method.getName()
+								+ "\" of class \""
+								+ instance.getClass().getCanonicalName() + "\"", exception);
+			}
 		}
 
 		@Override
