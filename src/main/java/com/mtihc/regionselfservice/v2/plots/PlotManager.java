@@ -32,12 +32,11 @@ public abstract class PlotManager {
 	protected final IPlotManagerConfig config;
 	protected final IPlotWorldConfig defaultConfig;
 	protected final Map<String, PlotWorld> worlds;
-	protected final IPlotPermission perms;
 	protected final PlotControl control;
 	
 	
 
-	public PlotManager(JavaPlugin plugin, WorldGuardPlugin worldGuard, IEconomy economy, IPlotManagerConfig config, IPlotWorldConfig defaultConfig, IPlotPermission perms) {
+	public PlotManager(JavaPlugin plugin, WorldGuardPlugin worldGuard, IEconomy economy, IPlotManagerConfig config, IPlotWorldConfig defaultConfig) {
 		this.plugin = plugin;
 		this.worldGuard = worldGuard;
 		try {
@@ -49,7 +48,6 @@ public abstract class PlotManager {
 		this.config = config;
 		this.defaultConfig = defaultConfig;
 		this.worlds = new HashMap<String, PlotWorld>();
-		this.perms = perms;
 		this.control = new PlotControl(this);
 		
 		Listener listener = new PlotListener(this);
@@ -102,10 +100,6 @@ public abstract class PlotManager {
 	
 	public Collection<PlotWorld> getPlotWorlds() {
 		return worlds.values();
-	}
-	
-	public IPlotPermission getPermissions() {
-		return perms;
 	}
 	
 	public PlotControl getControl() {

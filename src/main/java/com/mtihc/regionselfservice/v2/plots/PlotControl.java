@@ -19,7 +19,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BlockVector;
 
-import com.mtihc.regionselfservice.v2.plots.IPlotPermission.PlotAction;
 import com.mtihc.regionselfservice.v2.plots.exceptions.EconomyException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotBoundsException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotControlException;
@@ -188,8 +187,7 @@ public class PlotControl {
 		// 
 		int regionCount = getRegionCountOfPlayer(world.getWorld(), player.getName());
 		int regionMax = world.getConfig().getMaxRegionCount();
-		boolean bypassMax = player.hasPermission(
-				mgr.getPermissions().getPermission(PlotAction.BYPASS_MAX_REGIONS));
+		boolean bypassMax = player.hasPermission(Permission.BYPASSMAX_REGIONS);
 		
 		if(!bypassMax && regionCount >= regionMax) {
 			throw new PlotControlException("You already own " + regionCount + " regions (max: " + regionMax + ").");
@@ -234,8 +232,7 @@ public class PlotControl {
 		
 		// check bypasscost || pay for region
 		
-		boolean bypassCost = player.hasPermission(
-				mgr.getPermissions().getPermission(PlotAction.BYPASS_BUY_COST));
+		boolean bypassCost = player.hasPermission(Permission.BUY_BYPASSCOST);
 		
 		if(!bypassCost) {
 			try {
@@ -328,7 +325,7 @@ public class PlotControl {
 			by = y;
 		}
 		
-		if(!player.hasPermission(mgr.getPermissions().getPermission(PlotAction.CREATE_ANYSIZE))) {
+		if(!player.hasPermission(Permission.CREATE_ANYSIZE)) {
 			
 			int width = sel.getWidth();
 			int length = sel.getLength();
@@ -410,8 +407,7 @@ public class PlotControl {
 			// not overlapping or it's allowed to overlap
 			
 			boolean doAutomaticParent = plotWorld.getConfig().isAutomaticParentEnabled();
-			boolean allowAnywhere = player.hasPermission(
-					mgr.getPermissions().getPermission(PlotAction.CREATE_ANYWHERE));
+			boolean allowAnywhere = player.hasPermission(Permission.CREATE_ANYWHERE);
 			
 			ProtectedRegion parentRegion;
 			if(!allowAnywhere || doAutomaticParent) {
@@ -476,8 +472,7 @@ public class PlotControl {
 		boolean enableCost = plotWorld.getConfig().isCreateCostEnabled();
 		boolean bypassCost = !enableCost;
 		if (!bypassCost
-				&& player.hasPermission(
-						mgr.getPermissions().getPermission(PlotAction.BYPASS_CREATE_COST))) {
+				&& player.hasPermission(Permission.CREATE_BYPASSCOST)) {
 			bypassCost = true;
 		}
 		//-----------------------------------
@@ -574,8 +569,7 @@ public class PlotControl {
 		if(region == null) {
 			throw new PlotControlException("Region \"" + regionId + "\" doesn't exist.");
 		}
-		else if(!region.isOwner(player.getName()) && !player.hasPermission(
-				mgr.getPermissions().getPermission(PlotAction.REDEFINE_ANYREGION))) {
+		else if(!region.isOwner(player.getName()) && !player.hasPermission(Permission.REDEFINE_ANYREGION)) {
 			// must be owner
 			throw new PlotControlException("You can only redefine you own regions.");
 		}
@@ -585,8 +579,7 @@ public class PlotControl {
 		boolean enableCost = plotWorld.getConfig().isCreateCostEnabled();
 		boolean bypassCost = !enableCost;
 		if (!bypassCost
-				&& player.hasPermission(
-						mgr.getPermissions().getPermission(PlotAction.BYPASS_CREATE_COST))) {
+				&& player.hasPermission(Permission.CREATE_BYPASSCOST)) {
 			bypassCost = true;
 		}
 		

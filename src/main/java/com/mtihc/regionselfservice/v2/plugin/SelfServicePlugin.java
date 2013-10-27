@@ -15,7 +15,6 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.mtihc.regionselfservice.v2.plots.IEconomy;
-import com.mtihc.regionselfservice.v2.plots.IPlotPermission;
 import com.mtihc.regionselfservice.v2.plots.PlotManager;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.mtihc.regionselfservice.v2.plugin.util.commands.CommandException;
@@ -61,9 +60,7 @@ public class SelfServicePlugin extends JavaPlugin {
 		
 		this.config = new PlotManagerConfig(this, getDataFolder() + File.separator + "config.yml");
 		
-		IPlotPermission perms = new PlotPermissions();
-		
-		this.manager = new SelfServiceManager(this, worldGuard, economy, config, perms);
+		this.manager = new SelfServiceManager(this, worldGuard, economy, config);
 		
 		reloadConfig();
 		

@@ -21,7 +21,6 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.BlockVector;
 
-import com.mtihc.regionselfservice.v2.plots.IPlotPermission.PlotAction;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -99,13 +98,12 @@ class PlotListener implements Listener {
 		boolean isOwner = region.isOwner(player.getName());
 		boolean isInside = region.contains(sign.getX(), sign.getY(), sign.getZ());
 		
-		IPlotPermission perms = mgr.getPermissions();
 		IPlotWorldConfig config = plot.getPlotWorld().getConfig();
 
 		if(type == PlotSignType.FOR_RENT) {
 			
 			// check permission to rent out
-			if(!player.hasPermission(perms.getPermission(PlotAction.RENTOUT))) {
+			if(!player.hasPermission(Permission.RENTOUT)) {
 				player.sendMessage(ChatColor.RED + "You don't have permission to rent out regions.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -113,8 +111,7 @@ class PlotListener implements Listener {
 			}
 			
 			// check permission to rent out, unowned regions
-			if(!isOwner && !player.hasPermission(
-					perms.getPermission(PlotAction.RENTOUT_ANYREGION))) {
+			if(!isOwner && !player.hasPermission(Permission.RENTOUT_ANYREGION)) {
 				player.sendMessage(ChatColor.RED + "You can't rent out regions that you don't own.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -122,8 +119,7 @@ class PlotListener implements Listener {
 			}
 			
 			// check permission to rent out, outside the region
-			if(!isInside && !player.hasPermission(
-					perms.getPermission(PlotAction.RENTOUT_ANYWHERE))) {
+			if(!isInside && !player.hasPermission(Permission.RENTOUT_ANYWHERE)) {
 				player.sendMessage(ChatColor.RED + "You can't place this sign outside the region itself.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -164,7 +160,7 @@ class PlotListener implements Listener {
 			
 			// check permission to rent out, for free
 			if(rentCost == 0) {
-				if(!player.hasPermission(perms.getPermission(PlotAction.RENTOUT_FOR_FREE))) {
+				if(!player.hasPermission(Permission.RENTOUT_FREE)) {
 					player.sendMessage(ChatColor.RED + "You don't have permission to rent out regions for free.");
 					event.setCancelled(true);
 					sign.getBlock().breakNaturally();
@@ -179,7 +175,7 @@ class PlotListener implements Listener {
 		else if(type == PlotSignType.FOR_SALE) {
 			
 			// check permission to sell
-			if(!player.hasPermission(perms.getPermission(PlotAction.SELL))) {
+			if(!player.hasPermission(Permission.SELL)) {
 				player.sendMessage(ChatColor.RED + "You don't have permission to sell regions.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -187,8 +183,7 @@ class PlotListener implements Listener {
 			}
 			
 			// check permission to sell, unowned regions
-			if(!isOwner && !player.hasPermission(
-					perms.getPermission(PlotAction.SELL_ANYREGION))) {
+			if(!isOwner && !player.hasPermission(Permission.SELL_ANYREGION)) {
 				player.sendMessage(ChatColor.RED + "You can't sell regions that you don't own.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -214,8 +209,7 @@ class PlotListener implements Listener {
 			}
 			
 			// check permission to sell, outside the region
-			if(!isInside && !player.hasPermission(
-					perms.getPermission(PlotAction.SELL_ANYWHERE))) {
+			if(!isInside && !player.hasPermission(Permission.SELL_ANYWHERE)) {
 				player.sendMessage(ChatColor.RED + "You can't place this sign outside the region itself.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -254,7 +248,7 @@ class PlotListener implements Listener {
 			
 			// check permission to sell, for free
 			if(sellCost == 0) {
-				if(!player.hasPermission(perms.getPermission(PlotAction.SELL_FOR_FREE))) {
+				if(!player.hasPermission(Permission.SELL_FREE)) {
 					player.sendMessage(ChatColor.RED + "You don't have permission to sell regions for free.");
 					event.setCancelled(true);
 					sign.getBlock().breakNaturally();
@@ -417,8 +411,7 @@ class PlotListener implements Listener {
 			
 			// check region ownership || permission break-any
 			boolean isOwner = region.isOwner(player.getName());
-			String breakAny = mgr.getPermissions().getPermission(PlotAction.BREAK_ANY_SIGN);
-			if(!isOwner && !player.hasPermission(breakAny)) {
+			if(!isOwner && !player.hasPermission(Permission.BREAK_ANY_SIGN)) {
 				// not an owner, and no special permission
 				player.sendMessage(ChatColor.RED + "You don't own this region.");
 				// protect the sign

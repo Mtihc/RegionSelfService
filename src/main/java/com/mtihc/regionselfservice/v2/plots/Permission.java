@@ -1,4 +1,4 @@
-package com.mtihc.regionselfservice.v2.plugin;
+package com.mtihc.regionselfservice.v2.plots;
 
 public class Permission {
 
