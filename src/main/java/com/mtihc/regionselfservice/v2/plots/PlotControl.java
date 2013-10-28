@@ -216,6 +216,9 @@ public class PlotControl {
 		// This is part of preventing cheating with free regions.
 		// 
 		Set<String> owners = region.getOwners().getPlayers();
+		// get members for later
+		Set<String> members = region.getMembers().getPlayers();
+		
 		int ownerCount = owners.size();
 		
 		if(reserve) {
@@ -279,12 +282,18 @@ public class PlotControl {
 		if(!plot.delete()) {
 			plot.save();
 		}
+		// TODO taxAccount, tax
+		String taxAccount = "no account";
+		double tax = 0;
 		// TODO inform buyer, previous owners, current members
+		mgr.messages.bought(region.getId(), player, cost, owners, members, share, taxAccount, tax);
 		
 	}
 	
 	public void rent(Player player) {
 		// TODO
+		
+		// mgr.messages.rented
 	}
 	
 	private Selection getSelection(Player player) throws PlotControlException {
@@ -563,7 +572,6 @@ public class PlotControl {
 		PlotWorld plotWorld = mgr.getPlotWorld(sel.getWorld().getName());
 				
 		RegionManager regionManager = plotWorld.getRegionManager();
-
 		ProtectedRegion region = regionManager.getRegion(regionId);
 		
 		if(region == null) {
@@ -574,7 +582,19 @@ public class PlotControl {
 			throw new PlotControlException("You can only redefine you own regions.");
 		}
 		
+		double blockWorth = plotWorld.getConfig().getBlockWorth();
+		double oldWorth = getWorth(region, blockWorth);
+		int oldWidth = Math.abs(region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
+        int oldLength = Math.abs(region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ()) + 1;
+        int oldHeight = Math.abs(region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY()) + 1;
+        
 		region = defineRegion(plotWorld, player, regionId, sel, bottomY, topY, region);
+		
+		double newWorth = getWorth(region, blockWorth);
+		int newWidth = Math.abs(region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
+        int newLength = Math.abs(region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ()) + 1;
+        int newHeight = Math.abs(region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY()) + 1;
+        
 		
 		boolean enableCost = plotWorld.getConfig().isCreateCostEnabled();
 		boolean bypassCost = !enableCost;
@@ -585,10 +605,16 @@ public class PlotControl {
 		
 		// TODO pay or refund.. 
 		// TODO accept refund/payment with conversation API, otherwise, don't save
-
+		
 		try {
 			regionManager.addRegion(region);
 			regionManager.save();
+			
+			mgr.messages.resized(player, 
+					region.getOwners().getPlayers(), 
+					region.getMembers().getPlayers(), 
+					regionId, oldWorth, newWorth, oldWidth, oldLength, oldHeight, newWidth, newLength, newHeight);
+			
 		} catch (ProtectionDatabaseException e) {
 			throw new PlotControlException("Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage(), e);
 		}
@@ -623,8 +649,21 @@ public class PlotControl {
 			throw new PlotControlException("Failed to delete region \"" + regionId + "\". There might still be players renting that region.");
 		}
 		else {
-			// TODO refund after delete
-			sender.sendMessage(ChatColor.YELLOW + "Region \"" + regionId + "\" deleted.");
+			try {
+				RegionManager regionManager = plotWorld.getRegionManager();
+				ProtectedRegion region = plot.getRegion();
+				Set<String> owners = region.getOwners().getPlayers();
+				Set<String> members = region.getMembers().getPlayers();
+				regionManager.removeRegion(regionId);
+				regionManager.save();
+				
+				// TODO refund after delete
+				double refund = 0;
+				mgr.messages.removed(sender, owners, members, regionId, refund);
+				
+			} catch (ProtectionDatabaseException e) {
+				throw new PlotControlException("Failed to delete region with id \"" + regionId + "\": " + e.getMessage(), e);
+			}
 		}
 	}
 	

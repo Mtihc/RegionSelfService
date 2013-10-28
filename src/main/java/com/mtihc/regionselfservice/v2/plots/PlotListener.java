@@ -171,6 +171,11 @@ class PlotListener implements Listener {
 			if(rentCostOld != rentCost) {
 				plot.setRentCost(rentCost);
 			}
+			
+			mgr.messages.upForRent(player, 
+					region.getOwners().getPlayers(), 
+					region.getMembers().getPlayers(), 
+					regionId, rentCost, "1:00");
 		}
 		else if(type == PlotSignType.FOR_SALE) {
 			
@@ -259,6 +264,11 @@ class PlotListener implements Listener {
 			if(sellCostOld != sellCost) {
 				plot.setSellCost(sellCost);
 			}
+			
+			mgr.messages.upForSale(player, 
+					region.getOwners().getPlayers(), 
+					region.getMembers().getPlayers(), 
+					regionId, sellCost);
 			
 		}
 		else {

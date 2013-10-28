@@ -29,6 +29,7 @@ public abstract class PlotManager {
 	protected final WorldGuardPlugin worldGuard;
 	private WorldEditPlugin worldEdit;
 	protected final IEconomy economy;
+	protected final Messages messages;
 	protected final IPlotManagerConfig config;
 	protected final IPlotWorldConfig defaultConfig;
 	protected final Map<String, PlotWorld> worlds;
@@ -45,6 +46,7 @@ public abstract class PlotManager {
 			throw new IllegalArgumentException("Couldn't find WorldEdit.", e);
 		}
 		this.economy = economy;
+		this.messages = new Messages(economy);
 		this.config = config;
 		this.defaultConfig = defaultConfig;
 		this.worlds = new HashMap<String, PlotWorld>();
@@ -88,6 +90,10 @@ public abstract class PlotManager {
 	
 	public IEconomy getEconomy() {
 		return economy;
+	}
+	
+	public Messages getMessages() {
+		return messages;
 	}
 	
 	public IPlotManagerConfig getConfig() {
