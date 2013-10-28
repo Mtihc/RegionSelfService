@@ -41,5 +41,11 @@ public interface IPlotWorldConfig {
 	public abstract boolean isAutomaticParentEnabled();
 
 	public abstract boolean isCreateCostEnabled();
+
+	public abstract String getTaxAccount();
+
+	public abstract double getTaxPercent();
+
+	public abstract double getTaxFromPrice();
 	
 }

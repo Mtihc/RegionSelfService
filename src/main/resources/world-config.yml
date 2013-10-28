@@ -24,6 +24,10 @@ allow_overlap_unowned_regions: true
 
 enable_create_cost: false
 
+tax_percent: 19
+tax_from_price: 100
+tax_to_account: Mtihc
+
 region_defaults:
   owners: [Mtihc, Steve]
   bottom_y: 5

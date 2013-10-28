@@ -120,4 +120,19 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 		return getConfig().getBoolean("enable_create_cost");
 	}
 
+	@Override
+	public String getTaxAccount() {
+		return getConfig().getString("tax_to_account");
+	}
+
+	@Override
+	public double getTaxPercent() {
+		return getConfig().getDouble("tax_percent");
+	}
+
+	@Override
+	public double getTaxFromPrice() {
+		return getConfig().getDouble("tax_from_price");
+	}
+
 }

@@ -245,8 +245,31 @@ public class PlotControl {
 			}
 		}
 		
+
+        double share = cost;
+        
+        // --------------------
+        // TAX BEGIN
+        // --------------------
+
+
+        String taxAccount = world.getConfig().getTaxAccount();
+        double percentageTax = world.getConfig().getTaxPercent();
+        double percentage = 0;
+        if(cost >= world.getConfig().getTaxFromPrice()) {
+                
+                percentage = percentageTax * cost / 100;
+                share -= percentage;
+                mgr.getEconomy().deposit(taxAccount, percentage);
+        }
+        
+        // --------------------
+        // TAX END
+        // --------------------
+		
+		
 		// calc share and pay owners their share
-		double share = cost / Math.max(1, ownerCount);
+		share = share / Math.max(1, ownerCount);
 		for (String ownerName : owners) {
 			mgr.getEconomy().deposit(ownerName, share);
 		}
@@ -282,11 +305,7 @@ public class PlotControl {
 		if(!plot.delete()) {
 			plot.save();
 		}
-		// TODO taxAccount, tax
-		String taxAccount = "no account";
-		double tax = 0;
-		// TODO inform buyer, previous owners, current members
-		mgr.messages.bought(region.getId(), player, cost, owners, members, share, taxAccount, tax);
+		mgr.messages.bought(region.getId(), player, cost, owners, members, share, taxAccount, percentage);
 		
 	}
 	
