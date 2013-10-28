@@ -8,7 +8,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.mtihc.regionselfservice.v2.plots.Permission;
+import com.mtihc.regionselfservice.v2.plots.Plot;
+import com.mtihc.regionselfservice.v2.plots.PlotData;
 import com.mtihc.regionselfservice.v2.plots.PlotManager;
+import com.mtihc.regionselfservice.v2.plots.PlotWorld;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotControlException;
 import com.mtihc.regionselfservice.v2.plugin.util.commands.Command;
 import com.mtihc.regionselfservice.v2.plugin.util.commands.CommandException;
@@ -277,10 +280,42 @@ public class PlotCommand extends SimpleCommand {
 		}
 	}
 	
-	@Command(aliases = { "info" }, args = "[id]", desc = "Get region info.", help = { "Click a sign, or use this command while looking at a sign. ", "Or just specify a region id." }, perm = Permission.INFO)
+	@Command(aliases = { "info" }, args = "<id> [world]", desc = "Get region info.", help = { "Click a sign, or use this command to show region info. "}, perm = Permission.INFO)
 	public void info(CommandSender sender, String[] args) throws CommandException {
+		String regionId;
+		try {
+			regionId = args[0];
+		} catch(Exception e) {
+			throw new CommandException("Expected a region id.");
+		}
 		
-		// TODO
+		World world = null;
+		if(args.length > 1) {
+			try {
+				world = Bukkit.getWorld(args[1]);
+			} catch(Exception e) {
+				world = null;
+			}
+			
+			if(args.length > 2) {
+				throw new CommandException("Expceted only a region id. And optionally a world name.");
+			}
+			
+		}
+		
+		if(world == null) {
+			if(!(sender instanceof Player)) {
+				throw new CommandException("Expected a region id and world name.");
+			}
+			world = ((Player) sender).getWorld();
+		}
+		
+		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
+		Plot plot = plotWorld.getPlot(regionId);
+		if(plot == null) {
+			plot = new Plot(plotWorld, new PlotData(regionId, 0, 0));
+		}
+		plot.sendInfo(sender);
 	}
 	
 	// TODO add [world] argument to reload command?
