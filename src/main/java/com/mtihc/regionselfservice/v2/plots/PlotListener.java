@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -361,12 +362,18 @@ class PlotListener implements Listener {
 		onBlockProtect(block, event, null);
 	}
 	
+	private boolean areLocationsEqual(Block block1, Block block2) {
+		return Location.locToBlock(block1.getX()) == Location.locToBlock(block2.getX()) 
+				&& Location.locToBlock(block1.getZ()) == Location.locToBlock(block2.getZ())
+				&& Location.locToBlock(block1.getY()) == Location.locToBlock(block2.getY());
+	}
+	
 	private void onBlockProtect(Block block, Cancellable event, Block originalBlock) {
 		if(event.isCancelled()) {
 			return;// event cancelled
 		}
 		if(!(block.getState() instanceof Sign)) {
-			if(originalBlock != null) {
+			if(originalBlock == null) {
 				// check if there's a sign attached to this block
 				onBlockProtect(block.getRelative(BlockFace.UP), event, block);
 				onBlockProtect(block.getRelative(BlockFace.EAST), event, block);
@@ -379,9 +386,12 @@ class PlotListener implements Listener {
 		}
 		Sign sign = (Sign) block.getState();
 		Block attached = block.getRelative(((org.bukkit.material.Sign) sign.getData()).getAttachedFace());
-		if(!attached.getLocation().equals(originalBlock.getLocation())) {
+		if(!areLocationsEqual(attached, originalBlock)) {
+			// broke a block next to a sign.
+			// but the sign was not attached to it
 			return;
 		}
+		// broke a sign. or a block with a sign attached to it.
 		
 		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, sign.getLines());
 		if(type == null) {
