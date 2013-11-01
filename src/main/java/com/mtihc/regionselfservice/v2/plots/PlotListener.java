@@ -417,7 +417,7 @@ class PlotListener implements Listener {
 		}
 		
 		BlockVector coords = sign.getLocation().toVector().toBlockVector();
-		IPlotSignData plotSign = plot.removeSign(coords);
+		IPlotSignData plotSign = plot.getSign(coords);
 		if(plotSign == null) {
 			// sign data doesn't exist
 			// let it break
@@ -440,6 +440,8 @@ class PlotListener implements Listener {
 			}
 			else {
 				
+				plot.removeSign(coords);
+				plot.save();
 				Collection<IPlotSignData> signs = plot.getSigns(type);
 				if(signs == null || signs.isEmpty()) {
 					player.sendMessage(ChatColor.GREEN + "You broke the last " + type.name() + " sign of region \"" + plot.getRegionId() + "\".");
