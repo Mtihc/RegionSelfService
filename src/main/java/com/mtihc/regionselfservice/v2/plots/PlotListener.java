@@ -345,7 +345,7 @@ class PlotListener implements Listener {
 		// event includes Sign, ISign, Plot, Player and list of messages
 		
 		
-		event.setCancelled(true);
+		//event.setCancelled(true);
 	}
 	
 	@EventHandler
@@ -363,6 +363,7 @@ class PlotListener implements Listener {
 	}
 	
 	private boolean areLocationsEqual(Block block1, Block block2) {
+		if(block1 == null || block2 == null) return false;
 		return Location.locToBlock(block1.getX()) == Location.locToBlock(block2.getX()) 
 				&& Location.locToBlock(block1.getZ()) == Location.locToBlock(block2.getZ())
 				&& Location.locToBlock(block1.getY()) == Location.locToBlock(block2.getY());
@@ -381,12 +382,11 @@ class PlotListener implements Listener {
 				onBlockProtect(block.getRelative(BlockFace.WEST), event, block);
 				onBlockProtect(block.getRelative(BlockFace.NORTH), event, block);
 			}
-			
 			return;// not a sign
 		}
 		Sign sign = (Sign) block.getState();
 		Block attached = block.getRelative(((org.bukkit.material.Sign) sign.getData()).getAttachedFace());
-		if(!areLocationsEqual(attached, originalBlock)) {
+		if(originalBlock != null && !areLocationsEqual(attached, originalBlock)) {
 			// broke a block next to a sign.
 			// but the sign was not attached to it
 			return;
