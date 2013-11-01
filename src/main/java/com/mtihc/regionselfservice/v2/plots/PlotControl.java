@@ -554,13 +554,13 @@ public class PlotControl {
 		region.setOwners(ownersDomain);
 		
 		try {
-			mgr.getEconomy().withdraw(player.getName(), cost);
+			if(!bypassCost) mgr.getEconomy().withdraw(player.getName(), cost);
 		} catch (EconomyException e) {
 			throw new PlotControlException("Failed to pay for the region: " + e.getMessage(), e);
 		}
 		
 
-		if(depositTo != null && depositTo.size() != 0) {
+		if(enableCost && depositTo != null && depositTo.size() != 0) {
 			double share = Math.abs(cost) / depositTo.size();
 			for (String account : depositTo) {
 				mgr.getEconomy().deposit(account, share);
