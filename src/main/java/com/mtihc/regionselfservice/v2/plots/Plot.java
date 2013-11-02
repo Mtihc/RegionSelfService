@@ -10,6 +10,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversable;
+import org.bukkit.util.BlockVector;
 
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
@@ -102,6 +103,16 @@ public class Plot extends PlotData {
 	
 	
 	
+	@Override
+	public IPlotSignData removeSign(BlockVector coords) {
+		IPlotSignData result = super.removeSign(coords);
+		Block block = coords.toLocation(plotWorld.getWorld()).getBlock();
+		if(block.getState() instanceof Sign) {
+			block.breakNaturally();
+		}
+		return result;
+	}
+
 	/* (non-Javadoc)
 	 * @see com.mtihc.regionselfservice.v2.plots.PlotData#setSign(com.mtihc.regionselfservice.v2.plots.PlotSignData)
 	 */
@@ -127,7 +138,13 @@ public class Plot extends PlotData {
 	
 	
 	public boolean delete() {
-		// TODO only if no more renters
+		// break all signs of this plot
+		Collection<IPlotSignData> signs = getSigns();
+		for (IPlotSignData data : signs) {
+			BlockVector vec = data.getBlockVector();
+			removeSign(vec);
+		}
+		// remove plot data
 		plotWorld.getPlotData().remove(regionId);
 		return true;
 	}

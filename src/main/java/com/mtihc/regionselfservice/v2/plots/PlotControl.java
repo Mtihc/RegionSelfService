@@ -292,15 +292,11 @@ public class PlotControl {
 			mgr.getPlugin().getLogger().log(Level.SEVERE, msg, e);
 			throw new PlotControlException(msg + " " + e.getMessage(), e);
 		}
-		
+
 		// break all for sale signs
 		Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
 		for (IPlotSignData data : forSaleSigns) {
 			BlockVector vec = data.getBlockVector();
-			Block block = vec.toLocation(world.getWorld()).getBlock();
-			if(block.getState() instanceof Sign) {
-				block.breakNaturally();
-			}
 			plot.removeSign(vec);
 		}
 		
@@ -792,15 +788,23 @@ public class PlotControl {
 		
 	}
 	
-	public void delete(CommandSender sender, World world, String regionId) throws PlotControlException {
-		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
-		Plot plot = plotWorld.getPlot(regionId);
+	public void delete(final CommandSender player, World world, String regionId) throws PlotControlException {
+		final PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
+		// doesn't exist?
+		final Plot plot = plotWorld.getPlot(regionId);
 		if(plot == null) {
 			throw new PlotControlException("Region \"" + regionId + "\" doesn't exist.");
 		}
 		
+		final ProtectedRegion region = plot.getRegion();
+		
 		if(plotWorld.getConfig().isReserveFreeRegionsEnabled()) {
-			ProtectedRegion region = plot.getRegion();
+			
+			// Can't allow players to become homeless when 
+			// there are free regions reserved for the homeless!
+			// Because they would be able to get a free region, delete it,
+			// get another free region, delete it.. etc
+			
 			if(region != null) {
 				Set<String> owners = region.getOwners().getPlayers();
 				Set<String> homeless = getPotentialHomeless(world, owners);
@@ -816,27 +820,144 @@ public class PlotControl {
 		}
 		
 		
-		// TODO accept delete, with conversation API
-		if(!plot.delete()) {
-			throw new PlotControlException("Failed to delete region \"" + regionId + "\". There might still be players renting that region.");
+		final boolean costEnabled = plotWorld.getConfig().isCreateCostEnabled() && !player.hasPermission(Permission.CREATE_BYPASSCOST);
+		
+		
+
+		// TODO check if there are still renters
+		
+		Set<String> ownerList;
+		if(region != null) {
+			ownerList = region.getOwners().getPlayers();
 		}
 		else {
-			try {
-				RegionManager regionManager = plotWorld.getRegionManager();
-				ProtectedRegion region = plot.getRegion();
-				Set<String> owners = region.getOwners().getPlayers();
-				Set<String> members = region.getMembers().getPlayers();
-				regionManager.removeRegion(regionId);
-				regionManager.save();
-				
-				// TODO refund after delete
-				double refund = 0;
-				mgr.messages.removed(sender, owners, members, regionId, refund);
-				
-			} catch (ProtectionDatabaseException e) {
-				throw new PlotControlException("Failed to delete region with id \"" + regionId + "\": " + e.getMessage(), e);
-			}
+			// avoid null pointer errors
+			ownerList = new HashSet<String>();
 		}
+		final double refund;
+		final double share;
+		if(costEnabled) {
+			// calculate percentage of total worth
+			refund  = plotWorld.getConfig().getDeleteRefundPercent() * plot.getWorth() / 100;
+			// calculate how much each owner gets
+			share = refund / Math.max(1, ownerList.size());
+			
+			// console will not get this message
+			if(player instanceof Player) {
+				String nameString = "";
+				for (String name : ownerList) {
+					nameString += ", " + name;
+				}
+				if(!nameString.isEmpty()) {
+					nameString = nameString.substring(2);
+				}
+				else {
+					nameString = ChatColor.RED + "nobody";
+				}
+				
+				// send refund question message
+				player.sendMessage(
+						ChatColor.GREEN + "Are you sure you want to delete region '" 
+						+ ChatColor.WHITE + regionId 
+						+ ChatColor.GREEN + "' and share the refund of " 
+						+ ChatColor.WHITE + mgr.getEconomy().format(refund) 
+						+ ChatColor.GREEN + " amongst '" 
+						+ ChatColor.WHITE + nameString 
+						+ ChatColor.GREEN + "'?");
+			}
+			
+		}
+		else {
+			// setting share to zero, otherwise the final variable will give a warning
+			share=0;
+			refund=0;
+			
+			// console will not get this message
+			if(player instanceof Player) {
+				// send normal message
+				player.sendMessage(
+						ChatColor.GREEN + "Are you sure you want to delete region '" 
+						+ ChatColor.WHITE + regionId
+						+ ChatColor.GREEN + "'?");				
+			}
+			
+			
+		}
+		
+		// 
+		// create YesNoPrompt object
+		// 
+		YesNoPrompt prompt = new YesNoPrompt() {
+			
+			@Override
+			protected Prompt onYes() {
+				if(!plot.delete()) {
+					player.sendMessage(ChatColor.RED + "Failed to delete region \"" + plot.getRegionId() + "\". There might still be players renting that region.");
+				}
+				else {
+					try {
+						RegionManager regionManager = plotWorld.getRegionManager();
+						Set<String> owners;
+						Set<String> members;
+						if(region != null) {
+							regionManager.removeRegion(plot.getRegionId());
+							regionManager.save();
+							
+							owners = region.getOwners().getPlayers();
+							members = region.getMembers().getPlayers();
+						}
+						else {
+							// avoid null pointer errors
+							owners = new HashSet<String>();
+							members = new HashSet<String>();
+						}
+						
+						
+						// break all for sale signs
+						Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
+						for (IPlotSignData data : forSaleSigns) {
+							BlockVector vec = data.getBlockVector();
+							plot.removeSign(vec);
+						}
+
+						// refund, now we know it's deleted
+						if(costEnabled) {
+							for (String name : owners) {
+								mgr.getEconomy().deposit(name, share);
+							}
+						}
+						// send messages to everyone involved
+						mgr.messages.removed(player, owners, members, plot.getRegionId(), refund);
+						
+					} catch (ProtectionDatabaseException e) {
+						player.sendMessage(ChatColor.RED + "Failed to delete region with id \"" + plot.getRegionId() + "\": " + e.getMessage());
+					}
+				}
+				return Prompt.END_OF_CONVERSATION;
+			}
+			
+			@Override
+			protected Prompt onNo() {
+				player.sendMessage(ChatColor.RED + "Region '" + plot.getRegionId() + "' was not deleted.");
+				return Prompt.END_OF_CONVERSATION;
+			}
+		};
+		
+
+		if(!(player instanceof Player)) {
+			prompt.onYes();
+			return;
+		}
+		
+		// run YesNoPrompt
+		new ConversationFactory(mgr.getPlugin())
+		.withFirstPrompt(prompt)
+		.withLocalEcho(false)
+		.withModality(false)
+		.buildConversation((Player)player)
+		.begin();
+		
+		
 	}
 	
 	public void sendRegionCount(CommandSender sender, OfflinePlayer owner, World world) {

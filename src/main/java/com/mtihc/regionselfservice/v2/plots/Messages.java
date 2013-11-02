@@ -297,7 +297,7 @@ public class Messages {
            // Player <remover> removed region <id>.
            String msg = ChatColor.GREEN + "Player " + ChatColor.WHITE + remover.getName() + ChatColor.GREEN + " removed region " + ChatColor.WHITE + regionId + ChatColor.GREEN + ".";
            
-           if(owners != null) {
+           if(owners != null && !owners.isEmpty()) {
                    if(owners.size() > 1) {
                            for (String name : owners) {
                                    Player player = remover.getServer().getPlayerExact(name);
@@ -307,9 +307,13 @@ public class Messages {
                                    if(player.getName().equalsIgnoreCase(remover.getName())) {
                                            player.sendMessage(msg);
                                    }
-                                   player.sendMessage(ChatColor.GREEN + "You were owner of that region, so ");
-                                   player.sendMessage(ChatColor.GREEN + "you're sharing the refund of " + ChatColor.WHITE + format(refund) + ChatColor.GREEN + ", with " + ChatColor.WHITE + ownerNames);
-                                   player.sendMessage(ChatColor.GREEN + "You all received an equal share of " + ChatColor.WHITE + formatShare(refund, owners));
+                                   player.sendMessage(ChatColor.GREEN + "You were owner of that region.");
+                                   if(refund > 0) {
+                                	   player.sendMessage(ChatColor.GREEN + "So you're sharing the refund of " + ChatColor.WHITE + format(refund));
+                                	   player.sendMessage(ChatColor.GREEN + "with " + ChatColor.WHITE + ownerNames);
+                                	   player.sendMessage(ChatColor.GREEN + "You all received an equal share of " + ChatColor.WHITE + formatShare(refund, owners));
+                                   }
+                                   
                                    
                            }
                    }
@@ -319,8 +323,10 @@ public class Messages {
                                    if(player.getName().equalsIgnoreCase(remover.getName())) {
                                            player.sendMessage(msg);
                                    }
-                                   player.sendMessage(ChatColor.GREEN + "You were owner of that region, so ");
-                                   player.sendMessage(ChatColor.GREEN + "you received the refund of " + ChatColor.WHITE + format(refund));
+                                   player.sendMessage(ChatColor.GREEN + "You were owner of that region. ");
+                                   if(refund > 0) {
+                                	   player.sendMessage(ChatColor.GREEN + "So you received the refund of " + ChatColor.WHITE + format(refund));
+                                   }
                            }
                            
                            

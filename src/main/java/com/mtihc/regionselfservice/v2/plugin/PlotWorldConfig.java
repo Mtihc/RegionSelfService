@@ -135,4 +135,9 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 		return getConfig().getDouble("tax_from_price");
 	}
 
+	@Override
+	public double getDeleteRefundPercent() {
+		return getConfig().getDouble("percent_delete_refund");
+	}
+
 }

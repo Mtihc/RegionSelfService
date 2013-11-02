@@ -23,6 +23,7 @@ max_regions_per_player: -1
 allow_overlap_unowned_regions: true
 
 enable_create_cost: false
+percent_delete_refund: 80
 
 tax_percent: 19
 tax_from_price: 100

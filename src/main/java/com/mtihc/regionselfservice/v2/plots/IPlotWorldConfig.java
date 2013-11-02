@@ -47,5 +47,7 @@ public interface IPlotWorldConfig {
 	public abstract double getTaxPercent();
 
 	public abstract double getTaxFromPrice();
+
+	public abstract double getDeleteRefundPercent();
 	
 }
