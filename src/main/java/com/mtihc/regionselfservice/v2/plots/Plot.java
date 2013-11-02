@@ -9,6 +9,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.conversations.Conversable;
 
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
@@ -132,11 +133,17 @@ public class Plot extends PlotData {
 	}
 	
 	public void sendInfo(CommandSender sender) {
+		sendInfo(sender, false);
+	}
+	
+	public void sendInfo(CommandSender sender, boolean raw) {
 		// get the ProtectedRegion
 		ProtectedRegion region = getRegion();
 		
 		if(region == null) {
-			sender.sendMessage(ChatColor.RED + "Failed to send region info. Region \"" + getRegionId() + "\" doesn't exist.");
+			String errorMsg = ChatColor.RED + "Failed to send region info. Region \"" + getRegionId() + "\" doesn't exist.";
+			if(raw && sender instanceof Conversable) ((Conversable)sender).sendRawMessage(errorMsg);
+			else sender.sendMessage(errorMsg); 
 			return;
 		}
 		
@@ -163,8 +170,20 @@ public class Plot extends PlotData {
 		};
 		
 		// send messages with region info
-		sender.sendMessage(wgInfo);
-		sender.sendMessage(info);
+		if(raw && sender instanceof Conversable) {
+			Conversable conversable = (Conversable) sender;
+			for (String string : wgInfo) {
+				conversable.sendRawMessage(string);
+			}
+			for (String string : info) {
+				conversable.sendRawMessage(string);
+			}
+		}
+		else {
+			sender.sendMessage(wgInfo);
+			sender.sendMessage(info);
+		}
+		
 	}
 	
 	private String vectorToString(com.sk89q.worldedit.BlockVector blockVector) {

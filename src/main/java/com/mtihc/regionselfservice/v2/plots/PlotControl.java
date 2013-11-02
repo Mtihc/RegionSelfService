@@ -16,6 +16,8 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
+import org.bukkit.conversations.ConversationFactory;
+import org.bukkit.conversations.Prompt;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BlockVector;
 
@@ -475,16 +477,24 @@ public class PlotControl {
 		define(player, regionId, plotWorld.getConfig().getDefaultBottomY(), plotWorld.getConfig().getDefaultTopY());
 	}
 	
-	public void define(Player player, String regionId, int bottomY, int topY) throws PlotControlException {
+	public void define(final Player player, final String regionId, int bottomY, int topY) throws PlotControlException {
+		/*
+		 * exists already? invalid name? can't afford?
+		 * call method defineRegion
+		 * set region owner(s) to player or default
+		 * player pays money
+		 * save region
+		 * send info
+		 */
 		// get player's selection
 		Selection sel = getSelection(player);
 		// get plot-world information
-		PlotWorld plotWorld = mgr.getPlotWorld(sel.getWorld().getName());
+		final PlotWorld plotWorld = mgr.getPlotWorld(sel.getWorld().getName());
 		
 		
 		
 		// get world's RegionManager of WorldGuard
-		RegionManager regionManager = plotWorld.getRegionManager();
+		final RegionManager regionManager = plotWorld.getRegionManager();
 		
 		// check region existance
 		if(regionManager.hasRegion(regionId)) {
@@ -494,87 +504,100 @@ public class PlotControl {
 		if(!isValidRegionName(regionId)) {
 			throw new PlotControlException("Invalid region name \"" + regionId + "\". Try a different name.");
 		}
-		
-		ProtectedRegion region = defineRegion(plotWorld, player, regionId, sel, bottomY, topY);
-		
-		boolean enableCost = plotWorld.getConfig().isCreateCostEnabled();
-		boolean bypassCost = !enableCost;
-		if (!bypassCost
-				&& player.hasPermission(Permission.CREATE_BYPASSCOST)) {
-			bypassCost = true;
-		}
-		//-----------------------------------
-		double cost = getWorth(region, plotWorld.getConfig().getBlockWorth());
-		
-		if(!bypassCost) {
-			double bal = mgr.getEconomy().getBalance(player.getName());
-			if(bal < cost) {
-				throw new PlotControlException("You don't have enough money to create a region this big. You have " + mgr.getEconomy().format(bal) + ", but you require " + mgr.getEconomy().format(cost) + ".");
-			}
+		// create region
+		final ProtectedRegion region = defineRegion(plotWorld, player, regionId, sel, bottomY, topY);
+		// cost must be configured and bypass not permitted
+		final boolean enableCost = plotWorld.getConfig().isCreateCostEnabled() && !player.hasPermission(Permission.CREATE_BYPASSCOST);
+		// calculate cost
+		final double cost = getWorth(region, plotWorld.getConfig().getBlockWorth());
+		// check balance
+		double balance = mgr.getEconomy().getBalance(player.getName());
+		if(enableCost && balance < cost) {
+			throw new PlotControlException(ChatColor.RED + "You can't afford to create region " + ChatColor.WHITE + regionId + ChatColor.RED + ". You only have " + ChatColor.WHITE + mgr.getEconomy().format(balance) + ChatColor.RED + ", but it costs " + ChatColor.WHITE + mgr.getEconomy().format(cost) + ChatColor.RED + ".");
 		}
 		
-		
-		// who will get the money ?
-		Set<String> depositTo = new HashSet<String>();
-		// who are the default owners in the config ?
+		// get default owners from config
 		List<String> ownerList = plotWorld.getConfig().getDefaultOwners();
+		// who will be the region owner?
+		final DefaultDomain ownersDomain = new DefaultDomain();
+		// let's create the prompt first
 		
-		DefaultDomain ownersDomain;
-		
-		if (enableCost) {
-			// cost is enabled
-			ownersDomain = new DefaultDomain();
-			// player will be owner
-			ownersDomain.addPlayer(player.getName());
-			// owners in config will get money, if there are any
-			if (ownerList != null && ownerList.size() > 0) {
-				// owners in config will get money
-				for (String ownerName : ownerList) {
-					depositTo.add(ownerName);
+		// 
+		// create the YesNoPrompt
+		// we override onYes and onNo
+		// 
+		YesNoPrompt prompt = new YesNoPrompt() {
+			
+			@Override
+			protected Prompt onYes() {
+				// set region's owners
+				region.setOwners(ownersDomain);
+				
+				// pay money
+				if(enableCost) {
+					try {
+						mgr.getEconomy().withdraw(player.getName(), cost);
+					} catch (EconomyException e) {
+						player.sendRawMessage(ChatColor.RED + "Failed to pay for the region: " + e.getMessage());
+						return Prompt.END_OF_CONVERSATION;
+					}
 				}
+				
+				//save
+				try {
+					regionManager.addRegion(region);
+					regionManager.save();
+				} catch (ProtectionDatabaseException e) {
+					player.sendRawMessage(ChatColor.RED + "Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage());
+					return Prompt.END_OF_CONVERSATION;
+				}
+				// send region info to indicate it was successful
+				plotWorld.getPlot(regionId).sendInfo(player, true);
+				return Prompt.END_OF_CONVERSATION;
 			}
+			
+			@Override
+			protected Prompt onNo() {
+				player.sendRawMessage(ChatColor.RED + "Did not create a region.");
+				return Prompt.END_OF_CONVERSATION;
+			}
+		};
+		
+		// 
+		// add owners, and 
+		// run YesNoPrompt
+		// 
+		if (enableCost) {
+			// cost is enabled, player will be owner
+			ownersDomain.addPlayer(player.getName());
+			// ask question
+			player.sendMessage(ChatColor.GREEN + "Are you sure you want to pay " + ChatColor.WHITE + mgr.getEconomy().format(cost) + ChatColor.GREEN + ", ");
+			player.sendMessage(ChatColor.GREEN + "and create region '" + ChatColor.WHITE + region.getId() + ChatColor.GREEN + "?");
+			
+			// run YesNoPrompt
+			new ConversationFactory(mgr.getPlugin())
+			.withLocalEcho(false)
+			.withModality(false)
+			.withFirstPrompt(prompt)
+			.buildConversation(player)
+			.begin();
+			
 		} else {
 			// cost is not enabled
 			// who will be owner depends on config
 			if (ownerList == null || ownerList.size() < 1) {
-				// no owners in config, owner is sender
-				ownersDomain = new DefaultDomain();
+				// no owners in config, owner is player
 				ownersDomain.addPlayer(player.getName());
 			} else {
 				// owners are in config
 				// owners from cronfig will be owners
-				ownersDomain = new DefaultDomain();
 				for (Object ownerName : ownerList) {
 					ownersDomain.addPlayer(ownerName.toString().trim());
 				}
 			}
+			// save
+			prompt.onYes();
 		}
-		
-		// TODO accept cost and stuff, otherwise don't save... use conversation API
-		region.setOwners(ownersDomain);
-		
-		try {
-			if(!bypassCost) mgr.getEconomy().withdraw(player.getName(), cost);
-		} catch (EconomyException e) {
-			throw new PlotControlException("Failed to pay for the region: " + e.getMessage(), e);
-		}
-		
-
-		if(enableCost && depositTo != null && depositTo.size() != 0) {
-			double share = Math.abs(cost) / depositTo.size();
-			for (String account : depositTo) {
-				mgr.getEconomy().deposit(account, share);
-			}
-		}
-		
-		try {
-			regionManager.addRegion(region);
-			regionManager.save();
-		} catch (ProtectionDatabaseException e) {
-			throw new PlotControlException("Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage(), e);
-		}
-		// send region info to indicate it was successful
-		plotWorld.getPlot(regionId).sendInfo(player);
 	}
 	
 	
@@ -584,13 +607,21 @@ public class PlotControl {
 		redefine(player, regionId, plotWorld.getConfig().getDefaultBottomY(), plotWorld.getConfig().getDefaultTopY());
 	}
 	
-	public void redefine(Player player, String regionId, int bottomY, int topY) throws PlotControlException {
+	public void redefine(final Player player, final String regionId, int bottomY, int topY) throws PlotControlException {
+		/*
+		 * doesn't exist? different owner?
+		 * store old size, etc
+		 * call method defineRegion
+		 * calculate cost/refund
+		 * costs player if larger, refunds owners if smaller
+		 */
+		
 		// get player's selection
 		Selection sel = getSelection(player);
 		// get plot-world information
 		PlotWorld plotWorld = mgr.getPlotWorld(sel.getWorld().getName());
-				
-		RegionManager regionManager = plotWorld.getRegionManager();
+		
+		final RegionManager regionManager = plotWorld.getRegionManager();
 		ProtectedRegion region = regionManager.getRegion(regionId);
 		
 		if(region == null) {
@@ -598,45 +629,160 @@ public class PlotControl {
 		}
 		else if(!region.isOwner(player.getName()) && !player.hasPermission(Permission.REDEFINE_ANYREGION)) {
 			// must be owner
-			throw new PlotControlException("You can only redefine you own regions.");
+			throw new PlotControlException("You can only redefine your own regions.");
 		}
 		
+		// get old values
 		double blockWorth = plotWorld.getConfig().getBlockWorth();
-		double oldWorth = getWorth(region, blockWorth);
-		int oldWidth = Math.abs(region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
-        int oldLength = Math.abs(region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ()) + 1;
-        int oldHeight = Math.abs(region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY()) + 1;
+		final double oldWorth = getWorth(region, blockWorth);
+		final int oldWidth = Math.abs(region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
+		final int oldLength = Math.abs(region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ()) + 1;
+		final int oldHeight = Math.abs(region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY()) + 1;
         
-		region = defineRegion(plotWorld, player, regionId, sel, bottomY, topY, region);
+		// redefine region
+		final ProtectedRegion regionNew = defineRegion(plotWorld, player, regionId, sel, bottomY, topY, region);
 		
-		double newWorth = getWorth(region, blockWorth);
-		int newWidth = Math.abs(region.getMaximumPoint().getBlockX() - region.getMinimumPoint().getBlockX()) + 1;
-        int newLength = Math.abs(region.getMaximumPoint().getBlockZ() - region.getMinimumPoint().getBlockZ()) + 1;
-        int newHeight = Math.abs(region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY()) + 1;
+		// get new values
+		final double newWorth = getWorth(regionNew, blockWorth);
+		final int newWidth = Math.abs(regionNew.getMaximumPoint().getBlockX() - regionNew.getMinimumPoint().getBlockX()) + 1;
+		final int newLength = Math.abs(regionNew.getMaximumPoint().getBlockZ() - regionNew.getMinimumPoint().getBlockZ()) + 1;
+		final int newHeight = Math.abs(regionNew.getMaximumPoint().getBlockY() - regionNew.getMinimumPoint().getBlockY()) + 1;
         
+
+		// calculate cost. refund if < 0
+		final double cost = newWorth - oldWorth;
+		// get owners
+		final Set<String> ownerList = region.getOwners().getPlayers();
 		
-		boolean enableCost = plotWorld.getConfig().isCreateCostEnabled();
-		boolean bypassCost = !enableCost;
-		if (!bypassCost
-				&& player.hasPermission(Permission.CREATE_BYPASSCOST)) {
-			bypassCost = true;
-		}
+		// cost must be configured and bypass must not be permitted
+		final boolean enableCost = plotWorld.getConfig().isCreateCostEnabled() 
+				&& cost != 0 
+				&& !player.hasPermission(Permission.CREATE_BYPASSCOST);
 		
-		// TODO pay or refund.. 
-		// TODO accept refund/payment with conversation API, otherwise, don't save
-		
-		try {
-			regionManager.addRegion(region);
-			regionManager.save();
+		// 
+		// Ask the question
+		// 
+		if(cost > 0) {
+			// larger region
 			
-			mgr.messages.resized(player, 
-					region.getOwners().getPlayers(), 
-					region.getMembers().getPlayers(), 
-					regionId, oldWorth, newWorth, oldWidth, oldLength, oldHeight, newWidth, newLength, newHeight);
-			
-		} catch (ProtectionDatabaseException e) {
-			throw new PlotControlException("Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage(), e);
-		}
+            if(enableCost) {
+            	// check balance
+            	double balance = mgr.getEconomy().getBalance(player.getName()); 
+            	if(balance < cost) {
+            		throw new PlotControlException(ChatColor.RED + "You can't afford to resize region " + ChatColor.WHITE + regionId + ChatColor.RED + "' from " + ChatColor.RED + oldWidth + "x" + oldLength + "x" + oldHeight + ChatColor.RED + " to " + ChatColor.WHITE + newWidth + "x" + newLength + "x" + newHeight + ChatColor.RED + ". You only have " + ChatColor.WHITE + mgr.getEconomy().format(balance) + ChatColor.RED + ", but it costs " + ChatColor.WHITE + mgr.getEconomy().format(cost) + ChatColor.RED + ".");
+            	}
+            	// send cost info 
+            	player.sendMessage(ChatColor.GREEN + "Are you sure you want to pay " + ChatColor.WHITE + mgr.getEconomy().format(cost) + ChatColor.GREEN + " and ");
+            }
+            else {
+            	// no cost
+            	player.sendMessage(ChatColor.GREEN + "Are you sure you want to ");
+            }
+            // ... the rest of the message
+            player.sendMessage(ChatColor.GREEN + "resize region '" + ChatColor.WHITE + region.getId() + ChatColor.GREEN + "' from " + ChatColor.WHITE + oldWidth + "x" + oldLength + "x" + oldHeight + ChatColor.GREEN + " to " + ChatColor.WHITE + newWidth + "x" + newLength + "x" + newHeight + ChatColor.GREEN + "?");
+	    }
+	    else {
+	    	// smaller region
+	    	player.sendMessage(ChatColor.GREEN + "Are you sure you want to resize region '" + ChatColor.WHITE + region.getId() + ChatColor.GREEN + "' from " + ChatColor.WHITE + oldWidth + "x" + oldLength + "x" + oldHeight + ChatColor.GREEN + " to " + ChatColor.WHITE + newWidth + "x" + newLength + "x" + newHeight + ChatColor.GREEN + "?");
+	    	
+	    	if(enableCost) {
+		    	// get comma seperated string of owner names
+	    		// like: bob, john, hank
+	            String ownerNames = "";
+	            for (String name : ownerList) {
+	                    ownerNames += ", " + name;
+	            }
+	            if(ownerNames.isEmpty()) {
+	                    ownerNames = "nobody";
+	            }
+	            else {
+	                    ownerNames = ownerNames.substring(2);
+	            }
+	            
+	            // send info about refund
+            	player.sendMessage(ChatColor.GREEN + "The refund of " + ChatColor.WHITE + mgr.getEconomy().format(Math.abs(cost)) + ChatColor.GREEN + " will be shared");
+                player.sendMessage(ChatColor.GREEN + "amongst " + ChatColor.WHITE + ownerNames);
+            }
+	    }
+
+		// 
+		// create YesNoPrompt object
+		// we override onYes and onNo
+		// 
+		YesNoPrompt prompt = new YesNoPrompt() {
+
+			@Override
+			protected Prompt onYes() {
+				if (enableCost) {
+					try {
+						if (cost > 0) {
+							// larger region, cost money
+							mgr.getEconomy().withdraw(player.getName(),
+									Math.abs(cost));
+						} else {
+							// smaller region, refunds money to the owners
+							
+							// TODO should this refund money to the player instead?? 
+							// if so, the messages should be edited
+							
+							// calculate share
+							double share = Math.abs(cost) / Math.max(1, ownerList.size());
+							// refund equal share to owners
+							for (String name : ownerList) {
+								mgr.getEconomy().deposit(name, share);
+							}
+							
+						}
+					} catch (EconomyException e) {
+						// don't save
+						player.sendRawMessage(ChatColor.RED + e.getMessage());
+						return Prompt.END_OF_CONVERSATION;
+					}
+
+				}
+				try {
+					//save
+					regionManager.addRegion(regionNew);
+					regionManager.save();
+					
+					// send info to the player and owners and members
+					mgr.messages.resized(player, 
+							regionNew.getOwners().getPlayers(), 
+							regionNew.getMembers().getPlayers(),
+							regionId, 
+							(enableCost ? oldWorth : 0), 
+							(enableCost ? newWorth : 0), 
+							oldWidth, oldLength, oldHeight, 
+							newWidth, newLength, newHeight);
+
+				} catch (ProtectionDatabaseException e) {
+					// i think your server has bigger problems
+					player.sendRawMessage(ChatColor.RED
+							+ "Failed to save new region with id \""
+							+ regionNew.getId() + "\": " + e.getMessage());
+				}
+
+				return Prompt.END_OF_CONVERSATION;
+			}
+
+			@Override
+			protected Prompt onNo() {
+				player.sendRawMessage(ChatColor.RED
+						+ "Did not resize the region.");
+				return Prompt.END_OF_CONVERSATION;
+			}
+		};
+
+		// 
+		// run YesNoPrompt
+		// 
+		new ConversationFactory(mgr.getPlugin())
+		.withLocalEcho(false)
+		.withModality(false)
+		.withFirstPrompt(prompt)
+		.buildConversation(player)
+		.begin();
+		
 	}
 	
 	public void delete(CommandSender sender, World world, String regionId) throws PlotControlException {

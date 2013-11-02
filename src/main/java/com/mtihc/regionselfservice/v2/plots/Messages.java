@@ -339,7 +339,7 @@ public class Messages {
            }
    }
    
-   public void resized(CommandSender resizer, Set<String> owners, Set<String> members, String regionId, double oldWorth, double newWorth, int oldWidth, int oldLength, int oldHeight, int newWidth, int newLength, int newHeight) {
+   public void resized(Player resizer, Set<String> owners, Set<String> members, String regionId, double oldWorth, double newWorth, int oldWidth, int oldLength, int oldHeight, int newWidth, int newLength, int newHeight) {
            if(oldWidth * oldLength > newWidth * newLength) {
                    resized_smaller(resizer, owners, members, regionId, newWorth - oldWorth, oldWidth, oldLength, oldHeight, newWidth, newLength, newHeight);
            }
@@ -363,15 +363,21 @@ public class Messages {
     * creator Region "id" protected.
     * ...show region info....
     */
-   public void resized_bigger(CommandSender resizer, Set<String> owners, Set<String> members, String regionId, double cost, int oldWidth, int oldLength, int oldHeight, int newWidth, int newLength, int newHeight) {
+   public void resized_bigger(Player resizer, Set<String> owners, Set<String> members, String regionId, double cost, int oldWidth, int oldLength, int oldHeight, int newWidth, int newLength, int newHeight) {
            String permOwner = Permission.INFORM_OWNER_RESIZE;
            String permMember = Permission.INFORM_MEMBER_RESIZE;
            
            String oldSize = formatSize(oldWidth, oldLength, oldHeight);
            String newSize = formatSize(newWidth, newLength, newHeight);
-           resizer.sendMessage(ChatColor.GREEN + "You payed " + ChatColor.WHITE + format(cost) + ChatColor.GREEN + " to resize region " + ChatColor.WHITE + regionId + ChatColor.GREEN + " from " + ChatColor.WHITE + oldSize + ChatColor.GREEN + " to " + ChatColor.WHITE + newSize + ChatColor.GREEN + ".");
            
-           String msg = getResizeMessage(resizer.getName(), regionId, oldSize, newSize);
+           String msg = ChatColor.GREEN + "You ";
+           if(cost > 0) {
+        	   msg += "payed " + ChatColor.WHITE + format(cost) + ChatColor.GREEN + " and ";
+           }
+           msg += "resized region " + ChatColor.WHITE + regionId + ChatColor.GREEN + " from " + ChatColor.WHITE + oldSize + ChatColor.GREEN + " to " + ChatColor.WHITE + newSize + ChatColor.GREEN + ".";
+           resizer.sendRawMessage(msg);
+           
+           String resizeMsg = getResizeMessage(resizer.getName(), regionId, oldSize, newSize);
            
            if(owners != null) {
                    for (String name : owners) {
@@ -380,9 +386,9 @@ public class Messages {
                                    continue;
                            }
                            if(!player.getName().equalsIgnoreCase(resizer.getName())) {
-                                   player.sendMessage(msg);
+                                   player.sendRawMessage(resizeMsg);
                            }
-                           player.sendMessage(ChatColor.GREEN + "You are owner of that region.");
+                           player.sendRawMessage(ChatColor.GREEN + "You are owner of that region.");
                    }
                    
            }
@@ -393,13 +399,13 @@ public class Messages {
                                    continue;
                            }
                            if(!player.getName().equalsIgnoreCase(resizer.getName())) {
-                                   player.sendMessage(msg);
+                                   player.sendRawMessage(resizeMsg);
                            }
-                           player.sendMessage(ChatColor.GREEN + "You are member of that region.");
+                           player.sendRawMessage(ChatColor.GREEN + "You are member of that region.");
                    }
            }
    }
-   public void resized_smaller(CommandSender resizer, Set<String> owners, Set<String> members, String regionId, double refund, int oldWidth, int oldLength, int oldHeight, int newWidth, int newLength, int newHeight) {
+   public void resized_smaller(Player resizer, Set<String> owners, Set<String> members, String regionId, double refund, int oldWidth, int oldLength, int oldHeight, int newWidth, int newLength, int newHeight) {
            String ownerNames = toUserfriendlyString(owners);
            String permOwner = Permission.INFORM_OWNER_RESIZE;
            String permMember = Permission.INFORM_MEMBER_RESIZE;
@@ -407,7 +413,7 @@ public class Messages {
            String oldSize = formatSize(oldWidth, oldLength, oldHeight);
            String newSize = formatSize(newWidth, newLength, newHeight);
            
-           resizer.sendMessage(ChatColor.GREEN + "Resized region " + ChatColor.WHITE + regionId + ChatColor.GREEN + " from " + ChatColor.WHITE + oldSize + ChatColor.GREEN + " to " + ChatColor.WHITE + newSize + ChatColor.GREEN + ".");
+           resizer.sendRawMessage(ChatColor.GREEN + "Resized region " + ChatColor.WHITE + regionId + ChatColor.GREEN + " from " + ChatColor.WHITE + oldSize + ChatColor.GREEN + " to " + ChatColor.WHITE + newSize + ChatColor.GREEN + ".");
            
            String msg = getResizeMessage(resizer.getName(), regionId, oldSize, newSize);
            
@@ -419,20 +425,25 @@ public class Messages {
                                            continue;
                                    }
                                    if(!player.getName().equalsIgnoreCase(resizer.getName())) {
-                                           player.sendMessage(msg);
+                                           player.sendRawMessage(msg);
                                    }
-                                   player.sendMessage(ChatColor.GREEN + "You are owner of that region.");
-                                   player.sendMessage(ChatColor.GREEN + "Sharing the refund of " + ChatColor.WHITE + format(Math.abs(refund)) + ChatColor.GREEN + " with " + ChatColor.WHITE + ownerNames + ChatColor.GREEN + ".");
-                                   player.sendMessage(ChatColor.GREEN + "You all got an equal share of " + ChatColor.WHITE + formatShare(Math.abs(refund), owners));
+                                   player.sendRawMessage(ChatColor.GREEN + "You are owner of that region.");
+                                   if(refund != 0) {
+                                	   player.sendRawMessage(ChatColor.GREEN + "Sharing the refund of " + ChatColor.WHITE + format(Math.abs(refund)) + ChatColor.GREEN + " with " + ChatColor.WHITE + ownerNames + ChatColor.GREEN + ".");
+                                	   player.sendRawMessage(ChatColor.GREEN + "You all got an equal share of " + ChatColor.WHITE + formatShare(Math.abs(refund), owners));
+                                   }
+                                   
                            }
                    }
                    else {
                            Player player = resizer.getServer().getPlayerExact(owners.iterator().next());
                            if(player != null && player.isOnline() && player.hasPermission(permOwner)) {
                                    if(!player.getName().equalsIgnoreCase(resizer.getName())) {
-                                           player.sendMessage(msg);
+                                           player.sendRawMessage(msg);
                                    }
-                                   player.sendMessage(ChatColor.GREEN + "You received a refund of " + ChatColor.WHITE + format(Math.abs(refund)));
+                                   if(refund != 0) {
+                                	   player.sendRawMessage(ChatColor.GREEN + "You received a refund of " + ChatColor.WHITE + format(Math.abs(refund)));
+                                   }
                            }
                    }
                    
@@ -444,9 +455,9 @@ public class Messages {
                                    continue;
                            }
                            if(!player.getName().equalsIgnoreCase(resizer.getName())) {
-                                   player.sendMessage(msg);
+                                   player.sendRawMessage(msg);
                            }
-                           player.sendMessage(ChatColor.GREEN + "You are member of that region.");
+                           player.sendRawMessage(ChatColor.GREEN + "You are member of that region.");
                    }
            }
    }
