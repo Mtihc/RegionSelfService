@@ -347,7 +347,6 @@ public class PlotControl {
 		else {
 			ty = topY;
 		}
-		
 		// switch values if necessary
 		if(ty < by) {
 			int y = ty;
@@ -381,16 +380,16 @@ public class PlotControl {
 						width, length, height, maxWidthLength, maxWidthLength, minHeight, maxHeight);
 			}
 			// check maxY
-			if(topY > maxY) {
+			if(ty > maxY) {
 				throw new PlotBoundsException(
 						PlotBoundsException.Type.SELECTION_TOO_HIGH, 
-						topY, bottomY, minY, maxY);
+						ty, by, minY, maxY);
 			}
 			// check minY
-			if(bottomY < minY) {
+			if(by < minY) {
 				throw new PlotBoundsException(
 						PlotBoundsException.Type.SELECTION_TOO_LOW, 
-						topY, bottomY, minY, maxY);
+						ty, by, minY, maxY);
 			}
 		}
 		
@@ -404,8 +403,8 @@ public class PlotControl {
 		// create protected region
 		ProtectedCuboidRegion region = new ProtectedCuboidRegion(
 				regionId, 
-				new com.sk89q.worldedit.BlockVector(min.getBlockX(), bottomY, min.getBlockZ()), 
-				new com.sk89q.worldedit.BlockVector(max.getBlockX(), topY, max.getBlockZ()));
+				new com.sk89q.worldedit.BlockVector(min.getBlockX(), by, min.getBlockZ()), 
+				new com.sk89q.worldedit.BlockVector(max.getBlockX(), ty, max.getBlockZ()));
 		
 		if(existing != null) {
 			// redefining region, so keep existing values
