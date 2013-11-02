@@ -126,6 +126,22 @@ public class PlotControl {
 		return result;
 	}
 	
+	private void checkRegionCount(Player player, PlotWorld world) throws PlotControlException {
+
+		// 
+		// Check if player has too many regions
+		// or special permission
+		// 
+		int regionCount = getRegionCountOfPlayer(world.getWorld(), player.getName());
+		int regionMax = world.getConfig().getMaxRegionCount();
+		boolean bypassMax = player.hasPermission(Permission.BYPASSMAX_REGIONS);
+		
+		if(!bypassMax && regionCount >= regionMax) {
+			throw new PlotControlException("You already own " + regionCount + " regions (max: " + regionMax + ").");
+		}
+		
+	}
+	
 	public void buy(Player player) throws PlotControlException {
 		// get targeted sign
 		Sign sign = getTargetSign(player);
@@ -183,20 +199,8 @@ public class PlotControl {
 		}
 		
 
-		// 
-		// Check if player has too many regions
-		// or special permission
-		// 
+		checkRegionCount(player, world);
 		int regionCount = getRegionCountOfPlayer(world.getWorld(), player.getName());
-		int regionMax = world.getConfig().getMaxRegionCount();
-		boolean bypassMax = player.hasPermission(Permission.BYPASSMAX_REGIONS);
-		
-		if(!bypassMax && regionCount >= regionMax) {
-			throw new PlotControlException("You already own " + regionCount + " regions (max: " + regionMax + ").");
-		}
-		
-		
-		
 		
 		// get region cost
 		double cost = plot.getSellCost();
@@ -504,6 +508,7 @@ public class PlotControl {
 		if(!isValidRegionName(regionId)) {
 			throw new PlotControlException("Invalid region name \"" + regionId + "\". Try a different name.");
 		}
+		
 		// create region
 		final ProtectedRegion region = defineRegion(plotWorld, player, regionId, sel, bottomY, topY);
 		// cost must be configured and bypass not permitted
@@ -569,6 +574,7 @@ public class PlotControl {
 		// 
 		if (enableCost) {
 			// cost is enabled, player will be owner
+			checkRegionCount(player, plotWorld);
 			ownersDomain.addPlayer(player.getName());
 			// ask question
 			player.sendMessage(ChatColor.GREEN + "Are you sure you want to pay " + ChatColor.WHITE + mgr.getEconomy().format(cost) + ChatColor.GREEN + ", ");
@@ -587,6 +593,7 @@ public class PlotControl {
 			// who will be owner depends on config
 			if (ownerList == null || ownerList.size() < 1) {
 				// no owners in config, owner is player
+				checkRegionCount(player, plotWorld);
 				ownersDomain.addPlayer(player.getName());
 			} else {
 				// owners are in config
