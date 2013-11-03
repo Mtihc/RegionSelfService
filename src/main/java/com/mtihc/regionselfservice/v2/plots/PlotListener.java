@@ -317,21 +317,21 @@ class PlotListener implements Listener {
 			plot = plotWorld.getPlot(sign);
 		} catch (SignException e) {
 			// not a valid sign
-			event.getPlayer().sendRawMessage(ChatColor.RED + e.getMessage());
+			event.getPlayer().sendMessage(ChatColor.RED + e.getMessage());
 			event.getClickedBlock().breakNaturally();
 			return;
 		}
 		
 		if(plot == null) {
 			// didn't find the plot information
-			event.getPlayer().sendRawMessage(ChatColor.RED + "Sorry, this sign is invalid. Couldn't find the plot information.");
+			event.getPlayer().sendMessage(ChatColor.RED + "Sorry, this sign is invalid. Couldn't find the plot information.");
 			event.getClickedBlock().breakNaturally();
 			return;
 		}
 		
 		if(plot.getRegion() == null) {
 			// protected region doesn't exist
-			event.getPlayer().sendRawMessage(ChatColor.RED + "Sorry, region '" + plot.getRegionId() + "' doesn't exist anymore.");
+			event.getPlayer().sendMessage(ChatColor.RED + "Sorry, region '" + plot.getRegionId() + "' doesn't exist anymore.");
 			event.getClickedBlock().breakNaturally();
 			plot.delete();
 			return;

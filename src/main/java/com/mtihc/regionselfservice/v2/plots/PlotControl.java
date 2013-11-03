@@ -572,7 +572,7 @@ public class PlotControl {
 					try {
 						mgr.getEconomy().withdraw(player.getName(), cost);
 					} catch (EconomyException e) {
-						player.sendRawMessage(ChatColor.RED + "Failed to pay for the region: " + e.getMessage());
+						player.sendMessage(ChatColor.RED + "Failed to pay for the region: " + e.getMessage());
 						return Prompt.END_OF_CONVERSATION;
 					}
 				}
@@ -582,17 +582,17 @@ public class PlotControl {
 					regionManager.addRegion(region);
 					regionManager.save();
 				} catch (ProtectionDatabaseException e) {
-					player.sendRawMessage(ChatColor.RED + "Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage());
+					player.sendMessage(ChatColor.RED + "Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage());
 					return Prompt.END_OF_CONVERSATION;
 				}
 				// send region info to indicate it was successful
-				plotWorld.getPlot(regionId).sendInfo(player, true);
+				plotWorld.getPlot(regionId).sendInfo(player);
 				return Prompt.END_OF_CONVERSATION;
 			}
 			
 			@Override
 			protected Prompt onNo() {
-				player.sendRawMessage(ChatColor.RED + "Did not create a region.");
+				player.sendMessage(ChatColor.RED + "Did not create a region.");
 				return Prompt.END_OF_CONVERSATION;
 			}
 		};
@@ -771,7 +771,7 @@ public class PlotControl {
 						}
 					} catch (EconomyException e) {
 						// don't save
-						player.sendRawMessage(ChatColor.RED + e.getMessage());
+						player.sendMessage(ChatColor.RED + e.getMessage());
 						return Prompt.END_OF_CONVERSATION;
 					}
 
@@ -793,9 +793,11 @@ public class PlotControl {
 
 				} catch (ProtectionDatabaseException e) {
 					// i think your server has bigger problems
-					player.sendRawMessage(ChatColor.RED
+					String msg = ChatColor.RED
 							+ "Failed to save new region with id \""
-							+ regionNew.getId() + "\": " + e.getMessage());
+							+ regionNew.getId() + "\": " + e.getMessage();
+					player.sendMessage(msg);
+					mgr.getPlugin().getLogger().log(Level.WARNING, msg, e);
 				}
 
 				return Prompt.END_OF_CONVERSATION;
@@ -803,7 +805,7 @@ public class PlotControl {
 
 			@Override
 			protected Prompt onNo() {
-				player.sendRawMessage(ChatColor.RED
+				player.sendMessage(ChatColor.RED
 						+ "Did not resize the region.");
 				return Prompt.END_OF_CONVERSATION;
 			}
