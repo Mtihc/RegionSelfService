@@ -142,7 +142,7 @@ public class PlotControl {
 		
 	}
 	
-	public void buy(Player player) throws PlotControlException {
+	public void buy(final Player player) throws PlotControlException {
 		// get targeted sign
 		Sign sign = getTargetSign(player);
 		if(sign == null) {
@@ -150,14 +150,14 @@ public class PlotControl {
 		}
 		
 		BlockVector coords = sign.getLocation().toVector().toBlockVector();
-		PlotWorld world = mgr.getPlotWorld(player.getWorld().getName());
-		Plot plot;
+		final PlotWorld plotWorld = mgr.getPlotWorld(player.getWorld().getName());
+		final Plot plot;
 		IPlotSign plotSign = null;
 		
 		try {
 			// try to get the plot-object via wooden sign, 
 			// the sign should probably have the region name on the last 2 lines
-			plot = world.getPlot(sign);
+			plot = plotWorld.getPlot(sign);
 		} catch (SignException e) {
 			throw new PlotControlException("You're not looking at a valid sign: " + e.getMessage(), e);
 		}
@@ -183,7 +183,7 @@ public class PlotControl {
 		}
 		
 		// get ProtectedRegion
-		ProtectedRegion region = plot.getRegion();
+		final ProtectedRegion region = plot.getRegion();
 		if(region == null) {
 			throw new PlotControlException("Sorry, the region doesn't exist anymore.");
 		}
@@ -198,19 +198,18 @@ public class PlotControl {
 			throw new PlotControlException("You already own this region.");
 		}
 		
-
-		checkRegionCount(player, world);
-		int regionCount = getRegionCountOfPlayer(world.getWorld(), player.getName());
+		checkRegionCount(player, plotWorld);
+		int regionCount = getRegionCountOfPlayer(plotWorld.getWorld(), player.getName());
 		
 		// get region cost
-		double cost = plot.getSellCost();
+		final double cost = plot.getSellCost();
 		
 		// 
 		// check if it's a free region, 
 		// and if it's reserved, 
 		// and if player already has a region
 		// 
-		boolean reserve = world.getConfig().isReserveFreeRegionsEnabled();
+		boolean reserve = plotWorld.getConfig().isReserveFreeRegionsEnabled();
 		if(reserve && cost <= 0 && regionCount > 0) {
 			throw new PlotControlException("Free regions are reserved for new players.");
 		}
@@ -221,14 +220,12 @@ public class PlotControl {
 		// Check if players would become homless after sale.
 		// This is part of preventing cheating with free regions.
 		// 
-		Set<String> owners = region.getOwners().getPlayers();
+		final Set<String> owners = region.getOwners().getPlayers();
 		// get members for later
-		Set<String> members = region.getMembers().getPlayers();
-		
-		int ownerCount = owners.size();
+		final Set<String> members = region.getMembers().getPlayers();
 		
 		if(reserve) {
-			Set<String> homeless = getPotentialHomeless(world.getWorld(), owners);
+			Set<String> homeless = getPotentialHomeless(plotWorld.getWorld(), owners);
 			if(!homeless.isEmpty()) {
 				String homelessString = "";
 				for (String string : homeless) {
@@ -241,73 +238,110 @@ public class PlotControl {
 		
 		// check bypasscost || pay for region
 		
-		boolean bypassCost = player.hasPermission(Permission.BUY_BYPASSCOST);
+		final boolean bypassCost = player.hasPermission(Permission.BUY_BYPASSCOST);
+		double balance = mgr.getEconomy().getBalance(player.getName());
+		if(!bypassCost && cost > balance) {
+			throw new PlotControlException("You only have "+mgr.getEconomy().format(balance)+". You still require " + mgr.getEconomy().format(cost - balance) + ".");
+		}
 		
-		if(!bypassCost) {
-			try {
-				mgr.getEconomy().withdraw(player.getName(), cost);
-			} catch (EconomyException e) {
-				throw new PlotControlException("Failed to pay for region: " + e.getMessage());
+		// create YesNoPrompt
+		YesNoPrompt prompt = new YesNoPrompt() {
+			
+			@Override
+			protected Prompt onYes() {
+				if(!bypassCost) {
+					try {
+						mgr.getEconomy().withdraw(player.getName(), cost);
+					} catch (EconomyException e) {
+						player.sendMessage(ChatColor.RED + e.getMessage());
+						return Prompt.END_OF_CONVERSATION;
+					}
+				}
+				
+
+		        double share = cost;
+		        
+		        // --------------------
+		        // TAX BEGIN
+		        // --------------------
+
+
+		        String taxAccount = plotWorld.getConfig().getTaxAccount();
+		        double percentageTax = plotWorld.getConfig().getTaxPercent();
+		        double percentage = 0;
+		        if(cost >= plotWorld.getConfig().getTaxFromPrice()) {
+		                
+		                percentage = percentageTax * cost / 100;
+		                share -= percentage;
+		                mgr.getEconomy().deposit(taxAccount, percentage);
+		        }
+		        
+		        // --------------------
+		        // TAX END
+		        // --------------------
+				
+				
+				// calc share and pay owners their share
+				share = share / Math.max(1, owners.size());
+				for (String ownerName : owners) {
+					mgr.getEconomy().deposit(ownerName, share);
+				}
+				
+				// remove owners, add buyer as owner
+				DefaultDomain newOwnerDomain = new DefaultDomain();
+				newOwnerDomain.addPlayer(player.getName());
+				region.setOwners(newOwnerDomain);
+				// save region owner changes
+				try {
+					plotWorld.getRegionManager().save();
+				} catch (ProtectionDatabaseException e) {
+					String msg = "Failed to save region changes to world \"" + plotWorld.getName() + "\", using WorldGuard.";
+					mgr.getPlugin().getLogger().log(Level.WARNING, ChatColor.RED + msg, e);
+				}
+
+				// break all for sale signs
+				Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
+				for (IPlotSignData data : forSaleSigns) {
+					BlockVector vec = data.getBlockVector();
+					plot.removeSign(vec);
+				}
+				
+				
+				
+				// delete plot-info if possible, otherwise just save changes
+				// (a plot can't be deleted when there's still active renters)
+				if(!plot.delete()) {
+					plot.save();
+				}
+				mgr.messages.bought(plot.getRegionId(), player, cost, owners, members, share, taxAccount, percentage);
+				return Prompt.END_OF_CONVERSATION;
 			}
-		}
-		
+			
+			@Override
+			protected Prompt onNo() {
+				player.sendMessage(ChatColor.RED + "Did not buy region " + plot.getRegionId() + ".");
+				return Prompt.END_OF_CONVERSATION;
+			}
+		};
 
-        double share = cost;
-        
-        // --------------------
-        // TAX BEGIN
-        // --------------------
-
-
-        String taxAccount = world.getConfig().getTaxAccount();
-        double percentageTax = world.getConfig().getTaxPercent();
-        double percentage = 0;
-        if(cost >= world.getConfig().getTaxFromPrice()) {
-                
-                percentage = percentageTax * cost / 100;
-                share -= percentage;
-                mgr.getEconomy().deposit(taxAccount, percentage);
-        }
-        
-        // --------------------
-        // TAX END
-        // --------------------
-		
-		
-		// calc share and pay owners their share
-		share = share / Math.max(1, ownerCount);
-		for (String ownerName : owners) {
-			mgr.getEconomy().deposit(ownerName, share);
+		// ask the question
+		if(bypassCost) {
+			player.sendMessage(
+					ChatColor.GREEN + "You have permission to skip payment. "
+							+ "The owners still receive money.");
 		}
-		
-		// remove owners, add buyer as owner
-		DefaultDomain newOwnerDomain = new DefaultDomain();
-		newOwnerDomain.addPlayer(player.getName());
-		region.setOwners(newOwnerDomain);
-		// save region owner changes
-		try {
-			world.getRegionManager().save();
-		} catch (ProtectionDatabaseException e) {
-			String msg = "Failed to save region changes to world \"" + world.getName() + "\", using WorldGuard.";
-			mgr.getPlugin().getLogger().log(Level.SEVERE, msg, e);
-			throw new PlotControlException(msg + " " + e.getMessage(), e);
-		}
-
-		// break all for sale signs
-		Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
-		for (IPlotSignData data : forSaleSigns) {
-			BlockVector vec = data.getBlockVector();
-			plot.removeSign(vec);
-		}
-		
-		
-		
-		// delete plot-info if possible, otherwise just save changes
-		// (a plot can't be deleted when there's still active renters)
-		if(!plot.delete()) {
-			plot.save();
-		}
-		mgr.messages.bought(region.getId(), player, cost, owners, members, share, taxAccount, percentage);
+		player.sendMessage(
+				ChatColor.GREEN + "Are you sure you want to buy region " 
+						+ ChatColor.WHITE + region.getId() 
+						+ ChatColor.GREEN + " for " + ChatColor.WHITE 
+						+ mgr.getEconomy().format(cost) + ChatColor.GREEN + "?");
+		// prompt for yes or no
+		new ConversationFactory(mgr.getPlugin())
+		.withFirstPrompt(prompt)
+		.withLocalEcho(false)
+		.withModality(false)
+		.buildConversation(player)
+		.begin();
 		
 	}
 	
