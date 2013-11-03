@@ -285,7 +285,6 @@ class PlotListener implements Listener {
 		plot.setSign(plotSign);
 		plot.save();
 		
-		plot.sendInfo(player);
 	}
 	
 	@EventHandler
