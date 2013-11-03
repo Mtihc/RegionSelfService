@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.mtihc.regionselfservice.v2.plots.IPlotManagerConfig;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.mtihc.regionselfservice.v2.plugin.util.YamlFile;
 
 public class PlotManagerConfig extends YamlFile implements IPlotManagerConfig {
@@ -28,9 +29,19 @@ public class PlotManagerConfig extends YamlFile implements IPlotManagerConfig {
 	public List<String> getFirstLineForRent() {
 		return getConfig().getStringList("sign_first_line.for_rent");
 	}
+	
+	public void setFirstLineForRent(List<String> values) {
+		getConfig().set("sign_first_line.for_rent", values);
+		PlotSignType.FOR_RENT.setFirstLineOptions(values);
+	}
 
 	public List<String> getFirstLineForSale() {
 		return getConfig().getStringList("sign_first_line.for_sale");
+	}
+	
+	public void setFirstLineForSale(List<String> values) {
+		getConfig().set("sign_first_line.for_sale", values);
+		PlotSignType.FOR_SALE.setFirstLineOptions(values);
 	}
 	
 	@Override
@@ -44,5 +55,8 @@ public class PlotManagerConfig extends YamlFile implements IPlotManagerConfig {
 			getConfig().setDefaults(defConfig);
 			save();
 		}
+
+		PlotSignType.FOR_RENT.setFirstLineOptions(getFirstLineForRent());
+		PlotSignType.FOR_SALE.setFirstLineOptions(getFirstLineForSale());
 	}
 }

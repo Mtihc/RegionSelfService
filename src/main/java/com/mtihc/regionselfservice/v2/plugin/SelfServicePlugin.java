@@ -16,7 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.mtihc.regionselfservice.v2.plots.IEconomy;
 import com.mtihc.regionselfservice.v2.plots.PlotManager;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.mtihc.regionselfservice.v2.plugin.util.commands.CommandException;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 
@@ -130,8 +129,6 @@ public class SelfServicePlugin extends JavaPlugin {
 		((PlotWorldConfig) manager.getDefaultWorldConfig()).reload();
 		manager.reloadWorlds();
 		
-		PlotSignType.FOR_RENT.setFirstLineOptions(config.getFirstLineForRent());
-		PlotSignType.FOR_SALE.setFirstLineOptions(config.getFirstLineForSale());
 		
 	}
 

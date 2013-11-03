@@ -13,6 +13,7 @@ public class ForSaleSign extends ForSaleSignData implements IPlotSign {
 	public ForSaleSign(Plot plot, ForSaleSignData data) {
 		super(data);
 		this.plot = plot;
+		this.plot.setSign(this);
 	}
 	
 	@Override

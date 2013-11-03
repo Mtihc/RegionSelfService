@@ -13,6 +13,7 @@ public class ForRentSign extends ForRentSignData implements IPlotSign {
 	public ForRentSign(Plot plot, ForRentSignData data) {
 		super(data);
 		this.plot = plot;
+		this.plot.setSign(this);
 	}
 	
 	@Override
