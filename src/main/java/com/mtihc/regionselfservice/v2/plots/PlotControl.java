@@ -469,7 +469,7 @@ public class PlotControl {
 			
 			@Override
 			protected Prompt onNo() {
-				player.sendMessage(ChatColor.RED + "Did not buy region " + plot.getRegionId() + ".");
+				player.sendMessage(ChatColor.RED + "Did not rent region " + plot.getRegionId() + ".");
 				return Prompt.END_OF_CONVERSATION;
 			}
 		};
@@ -481,10 +481,10 @@ public class PlotControl {
 							+ "The owners still receive money.");
 		}
 		player.sendMessage(
-				ChatColor.GREEN + "Are you sure you want to buy region " 
+				ChatColor.GREEN + "Are you sure you want to rent region " 
 						+ ChatColor.WHITE + region.getId() 
 						+ ChatColor.GREEN + " for " + ChatColor.WHITE 
-						+ mgr.getEconomy().format(cost) + ChatColor.GREEN + "?");
+						+ mgr.getEconomy().format(cost) + ChatColor.GREEN + "?");// TODO add time to message
 		// prompt for yes or no
 		new ConversationFactory(mgr.getPlugin())
 		.withFirstPrompt(prompt)
