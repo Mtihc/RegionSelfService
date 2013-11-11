@@ -345,10 +345,153 @@ public class PlotControl {
 		
 	}
 	
-	public void rent(Player player) {
-		// TODO
+	public void rent(final Player player) throws PlotControlException {
+		// get targeted sign
+		Sign sign = getTargetSign(player);
+		if(sign == null) {
+			throw new PlotControlException("You're not looking at a wooden sign.");
+		}
 		
-		// mgr.messages.rented
+		BlockVector coords = sign.getLocation().toVector().toBlockVector();
+		final PlotWorld plotWorld = mgr.getPlotWorld(player.getWorld().getName());
+		final Plot plot;
+		IPlotSign plotSign = null;
+		
+		try {
+			// try to get the plot-object via wooden sign, 
+			// the sign should probably have the region name on the last 2 lines
+			plot = plotWorld.getPlot(sign);
+		} catch (SignException e) {
+			throw new PlotControlException("You're not looking at a valid sign: " + e.getMessage(), e);
+		}
+		
+		
+		if(plot != null) {
+			// couldn't find plot-object using the targeted sign.
+			// The plot-data was probably deleted.
+			plotSign = (IPlotSign) plot.getSign(coords);
+		}
+		else {
+			throw new PlotControlException("Couldn't find plot information.");
+		}
+		
+		
+		if(plotSign == null) {
+			throw new PlotControlException("Couldn't find plot-sign information.");
+		}
+		
+		if(plotSign.getType() != PlotSignType.FOR_RENT) {
+			// plot-sign is not a for-rent sign
+			throw new PlotControlException("You're not looking at a for-rent sign.");
+		}
+		
+		// get ProtectedRegion
+		final ProtectedRegion region = plot.getRegion();
+		if(region == null) {
+			throw new PlotControlException("Sorry, the region doesn't exist anymore.");
+		}
+
+		// not for rent?
+		if(!plot.isForRent()) {
+			throw new PlotControlException("Sorry, region \"" + plot.getRegionId() + "\" isn't for rent. This is probably an old sign.");
+		}
+
+		// already owner?
+		if(region.isMember(player.getName())) {
+			throw new PlotControlException("You're already member of this region.");
+		}
+		
+		// get owners for later
+		final Set<String> owners = region.getOwners().getPlayers();
+		// get members for later
+		final Set<String> members = region.getMembers().getPlayers();
+		
+		
+		// TODO get rent cost, and time
+		// get rent cost
+		final double cost = plot.getRentCost();
+		final String timeString = null;
+
+		
+		// check bypasscost || pay for region
+		
+		final boolean bypassCost = player.hasPermission(Permission.RENT_BYPASSCOST);
+		double balance = mgr.getEconomy().getBalance(player.getName());
+		if(!bypassCost && cost > balance) {
+			throw new PlotControlException("You only have "+mgr.getEconomy().format(balance)+". You still require " + mgr.getEconomy().format(cost - balance) + ".");
+		}
+		
+		// create YesNoPrompt
+		YesNoPrompt prompt = new YesNoPrompt() {
+			
+			@Override
+			protected Prompt onYes() {
+				if(!bypassCost) {
+					try {
+						mgr.getEconomy().withdraw(player.getName(), cost);
+					} catch (EconomyException e) {
+						player.sendMessage(ChatColor.RED + e.getMessage());
+						return Prompt.END_OF_CONVERSATION;
+					}
+				}
+				
+
+		        double share = cost;
+		        
+		        
+		        // no tax for renting out
+				
+				// calc share and pay owners their share
+				share = share / Math.max(1, owners.size());
+				for (String ownerName : owners) {
+					mgr.getEconomy().deposit(ownerName, share);
+				}
+				
+				// add renter as member
+				region.getOwners().addPlayer(player.getName());
+				
+				// save region owner changes
+				try {
+					plotWorld.getRegionManager().save();
+				} catch (ProtectionDatabaseException e) {
+					String msg = "Failed to save region changes to world \"" + plotWorld.getName() + "\", using WorldGuard.";
+					mgr.getPlugin().getLogger().log(Level.WARNING, ChatColor.RED + msg, e);
+				}
+				
+				// TODO put player's name on the sign...
+				// TODO put rent time on the sign. and update every minute using a timer
+				// timer will be for every plot that has renters.
+				// TODO restart timers when the server restarts
+				
+				mgr.messages.rented(player, owners, members, plot.getRegionId(), cost, timeString);
+				return Prompt.END_OF_CONVERSATION;
+			}
+			
+			@Override
+			protected Prompt onNo() {
+				player.sendMessage(ChatColor.RED + "Did not buy region " + plot.getRegionId() + ".");
+				return Prompt.END_OF_CONVERSATION;
+			}
+		};
+
+		// ask the question
+		if(bypassCost) {
+			player.sendMessage(
+					ChatColor.GREEN + "You have permission to skip payment. "
+							+ "The owners still receive money.");
+		}
+		player.sendMessage(
+				ChatColor.GREEN + "Are you sure you want to buy region " 
+						+ ChatColor.WHITE + region.getId() 
+						+ ChatColor.GREEN + " for " + ChatColor.WHITE 
+						+ mgr.getEconomy().format(cost) + ChatColor.GREEN + "?");
+		// prompt for yes or no
+		new ConversationFactory(mgr.getPlugin())
+		.withFirstPrompt(prompt)
+		.withLocalEcho(false)
+		.withModality(false)
+		.buildConversation(player)
+		.begin();
 	}
 	
 	private Selection getSelection(Player player) throws PlotControlException {

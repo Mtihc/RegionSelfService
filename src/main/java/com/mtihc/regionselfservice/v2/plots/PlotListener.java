@@ -132,6 +132,7 @@ class PlotListener implements Listener {
 			double rentCostOld = plot.getRentCost();
 			double rentCost;
 			try {
+				// TODO get rent time
 				rentCost = Double.parseDouble(event.getLine(1).trim());
 			} catch(Exception e) {
 				rentCost = rentCostOld;
@@ -146,6 +147,7 @@ class PlotListener implements Listener {
 			
 			if(rentCost < minRentCost) {
 				player.sendMessage(ChatColor.RED + "The price is too low.");
+				// TODO The rent-price must be between minRentCost per minRentTime and maxRentCost per maxRentTime.
 				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -153,6 +155,7 @@ class PlotListener implements Listener {
 			}
 			else if(rentCost > maxRentCost) {
 				player.sendMessage(ChatColor.RED + "The price is too high.");
+				// TODO The rent-price must be between minRentCost per minRentTime and maxRentCost per maxRentTime.
 				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -176,7 +179,7 @@ class PlotListener implements Listener {
 			mgr.messages.upForRent(player, 
 					region.getOwners().getPlayers(), 
 					region.getMembers().getPlayers(), 
-					regionId, rentCost, "1:00");
+					regionId, rentCost, "1h");
 		}
 		else if(type == PlotSignType.FOR_SALE) {
 			

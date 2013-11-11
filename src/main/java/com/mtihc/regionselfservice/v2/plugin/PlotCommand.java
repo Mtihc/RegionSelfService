@@ -331,10 +331,15 @@ public class PlotCommand extends SimpleCommand {
 	}
 	
 	// TODO rent command
-	/*@Command(aliases = { "rent" }, args = "", desc = "Rent a region", help = { "" }, perm = Permissions.RENT)
-	public void rent(CommandSender sender, String[] args) {
-		
-	}*/
+	@Command(aliases = { "rent" }, args = "", desc = "Rent a region", help = { "" }, perm = Permission.RENT)
+	public void rent(CommandSender sender, String[] args) throws CommandException {
+		Player player = getPlayer(sender);
+		try {
+			mgr.getControl().rent(player);
+		} catch (PlotControlException e) {
+			throw new CommandException(e.getMessage());
+		}
+	}
 	
 	// TODO sell command to define and place a sign in one go
 	/*public void sell(CommandSender sender, String[] args) {
