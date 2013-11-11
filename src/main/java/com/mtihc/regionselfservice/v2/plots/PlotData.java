@@ -16,16 +16,18 @@ public class PlotData implements ConfigurationSerializable {
 	protected final String regionId;
 	private double sellCost = 0;
 	private double rentCost = 0;
+	private long rentTime = 0;
 	protected final Map<BlockVector, IPlotSignData> signs = new HashMap<BlockVector, IPlotSignData>();
 	
-	public PlotData(String regionId, double sellCost, double rentCost) {
-		this(regionId, sellCost, rentCost, null);
+	public PlotData(String regionId, double sellCost, double rentCost, long rentTime) {
+		this(regionId, sellCost, rentCost, rentTime, null);
 	}
 	
-	public PlotData(String regionId, double sellCost, double rentCost, Collection<IPlotSignData> signs) {
+	public PlotData(String regionId, double sellCost, double rentCost, long rentTime, Collection<IPlotSignData> signs) {
 		this.regionId = regionId;
 		this.sellCost = sellCost;
 		this.rentCost = rentCost;
+		this.rentTime = rentTime;
 		
 		if(signs != null) {
 			for (IPlotSignData data : signs) {
@@ -39,6 +41,7 @@ public class PlotData implements ConfigurationSerializable {
 		this.regionId = (String) values.get("region-id");
 		this.sellCost = (Double) values.get("sell-cost");
 		this.rentCost = (Double) values.get("rent-cost");
+		this.rentTime = (Long) values.get("rent-time");
 		
 		Map<?, ?> signsSection = (Map<?, ?>) values.get("signs");
 		if(signsSection != null) {
@@ -61,6 +64,7 @@ public class PlotData implements ConfigurationSerializable {
 		values.put("region-id", regionId);
 		values.put("sell-cost", sellCost);
 		values.put("rent-cost", rentCost);
+		values.put("rent-time", rentTime);
 
 		Map<String, Object> signsSection = new LinkedHashMap<String, Object>();
 		Collection<IPlotSignData> signs = getSigns();
@@ -96,6 +100,14 @@ public class PlotData implements ConfigurationSerializable {
 	
 	public void setRentCost(double cost) {
 		this.rentCost = cost;
+	}
+	
+	public long getRentTime() {
+		return rentTime;
+	}
+	
+	public void setRentTime(long millisec) {
+		this.rentTime = millisec;
 	}
 	
 	public String getRegionId() {

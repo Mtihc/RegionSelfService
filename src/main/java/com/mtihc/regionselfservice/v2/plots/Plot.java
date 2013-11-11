@@ -25,7 +25,7 @@ public class Plot extends PlotData {
 
 
 	public Plot(PlotWorld plotWorld, PlotData data) {
-		super(data.getRegionId(), data.getSellCost(), data.getRentCost());
+		super(data.getRegionId(), data.getSellCost(), data.getRentCost(), data.getRentTime());
 		this.plotWorld = plotWorld;
 		this.manager = plotWorld.getPlotManager();
 		

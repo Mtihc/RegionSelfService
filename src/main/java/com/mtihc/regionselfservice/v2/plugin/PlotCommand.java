@@ -313,7 +313,7 @@ public class PlotCommand extends SimpleCommand {
 		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
 		Plot plot = plotWorld.getPlot(regionId);
 		if(plot == null) {
-			plot = new Plot(plotWorld, new PlotData(regionId, 0, 0));
+			plot = new Plot(plotWorld, new PlotData(regionId, 0, 0, 0));
 		}
 		plot.sendInfo(sender);
 	}

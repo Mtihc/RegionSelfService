@@ -51,7 +51,7 @@ public class PlotWorld {
 	public Plot getPlot(String regionId) {
 		PlotData data = plots.get(regionId);
 		if(data == null) {
-			data = new PlotData(regionId, 0, 0);
+			data = new PlotData(regionId, 0, 0, 0);
 		}
 		return createPlot(data);
 	}
