@@ -27,7 +27,7 @@ import com.mtihc.regionselfservice.v2.plots.exceptions.PlotControlException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
 import com.mtihc.regionselfservice.v2.plots.signs.ForRentSign;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.worldedit.bukkit.selections.Selection;
 import com.sk89q.worldguard.LocalPlayer;
@@ -180,7 +180,7 @@ public class PlotControl {
 			throw new PlotControlException("Couldn't find plot-sign information.");
 		}
 		
-		if(plotSign.getType() != PlotSignType2.FOR_SALE) {
+		if(plotSign.getType() != PlotSignType.FOR_SALE) {
 			// plot-sign is not a for-sale sign
 			throw new PlotControlException("You're not looking at a for-sale sign.");
 		}
@@ -307,7 +307,7 @@ public class PlotControl {
 				}
 
 				// break all for sale signs
-				Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType2.FOR_SALE);
+				Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
 				for (IPlotSignData data : forSaleSigns) {
 					BlockVector vec = data.getBlockVector();
 					plot.removeSign(vec);
@@ -387,7 +387,7 @@ public class PlotControl {
 			throw new PlotControlException("Couldn't find plot-sign information.");
 		}
 		
-		if(plotSign.getType() != PlotSignType2.FOR_RENT) {
+		if(plotSign.getType() != PlotSignType.FOR_RENT) {
 			// plot-sign is not a for-rent sign
 			throw new PlotControlException("You're not looking at a for-rent sign.");
 		}
@@ -1111,7 +1111,7 @@ public class PlotControl {
 						
 						
 						// break all for sale signs
-						Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType2.FOR_SALE);
+						Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
 						for (IPlotSignData data : forSaleSigns) {
 							BlockVector vec = data.getBlockVector();
 							plot.removeSign(vec);

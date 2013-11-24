@@ -28,7 +28,7 @@ import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSign;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForSaleSignText;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
@@ -50,7 +50,7 @@ class PlotListener implements Listener {
 		}
 		
 		Sign sign = (Sign) event.getBlock().getState();
-		PlotSignType2 type = PlotSignType2.getPlotSignType(event.getLines());
+		PlotSignType type = PlotSignType.getPlotSignType(event.getLines());
 		if(type == null) {
 			return;// not a plot-sign
 		}
@@ -102,7 +102,7 @@ class PlotListener implements Listener {
 		
 		IPlotWorldConfig config = plot.getPlotWorld().getConfig();
 
-		if(type == PlotSignType2.FOR_RENT) {
+		if(type == PlotSignType.FOR_RENT) {
 			
 			// check permission to rent out
 			if(!player.hasPermission(Permission.RENTOUT)) {
@@ -188,7 +188,7 @@ class PlotListener implements Listener {
 					region.getMembers().getPlayers(), 
 					region.getId(), rentCost, new TimeStringConverter().convert(rentTime));
 		}
-		else if(type == PlotSignType2.FOR_SALE) {
+		else if(type == PlotSignType.FOR_SALE) {
 			
 			// check permission to sell
 			if(!player.hasPermission(Permission.SELL)) {
@@ -305,7 +305,7 @@ class PlotListener implements Listener {
 			return;// not a sign
 		}
 		Sign sign = (Sign) event.getClickedBlock().getState();
-		PlotSignType2 type = PlotSignType2.getPlotSignType(sign.getLines());
+		PlotSignType type = PlotSignType.getPlotSignType(sign.getLines());
 		if(type == null) {
 			return;// not a plot-sign
 		}
@@ -390,7 +390,7 @@ class PlotListener implements Listener {
 		}
 		// broke a sign. or a block with a sign attached to it.
 		
-		PlotSignType2 type = PlotSignType2.getPlotSignType(sign.getLines());
+		PlotSignType type = PlotSignType.getPlotSignType(sign.getLines());
 		if(type == null) {
 			return;// not a plot-sign
 		}

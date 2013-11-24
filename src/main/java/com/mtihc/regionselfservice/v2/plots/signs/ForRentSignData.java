@@ -18,7 +18,7 @@ public class ForRentSignData extends PlotSignData {
 	}
 
 	public ForRentSignData(BlockVector coords) {
-		super(PlotSignType2.FOR_RENT, coords);
+		super(PlotSignType.FOR_RENT, coords);
 		// when sign is created, nobody is renting yet
 		this.rentPlayer = null;
 		this.rentPlayerTime = 0;

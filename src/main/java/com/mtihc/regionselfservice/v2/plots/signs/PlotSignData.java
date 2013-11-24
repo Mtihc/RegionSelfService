@@ -11,13 +11,13 @@ import com.mtihc.regionselfservice.v2.plots.IPlotSignData;
 abstract class PlotSignData implements IPlotSignData {
 
 	private BlockVector coords;
-	private PlotSignType2 type;
+	private PlotSignType type;
 	
 	protected PlotSignData(IPlotSignData other) {
 		this(other.getType(), other.getBlockVector());
 	}
 
-	protected PlotSignData(PlotSignType2 type, BlockVector coords) {
+	protected PlotSignData(PlotSignType type, BlockVector coords) {
 		this.coords = coords.clone();
 		this.type = type;
 	}
@@ -26,7 +26,7 @@ abstract class PlotSignData implements IPlotSignData {
 		coords = (BlockVector) values.get("coords");
 		
 		String typeName = (String) values.get("sign-type");
-		type = PlotSignType2.valueOf(typeName);
+		type = PlotSignType.valueOf(typeName);
 	}
 	
 	public Map<String, Object> serialize() {
@@ -48,7 +48,7 @@ abstract class PlotSignData implements IPlotSignData {
 	 * @see com.mtihc.regionselfservice.v2.plots.signs.IPlotSignData#getType()
 	 */
 	@Override
-	public PlotSignType2 getType() {
+	public PlotSignType getType() {
 		return type;
 	}
 	

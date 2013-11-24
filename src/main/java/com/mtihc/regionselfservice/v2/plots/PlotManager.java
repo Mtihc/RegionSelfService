@@ -17,7 +17,7 @@ import com.mtihc.regionselfservice.v2.plots.signs.ForRentSign;
 import com.mtihc.regionselfservice.v2.plots.signs.ForRentSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -78,12 +78,12 @@ public abstract class PlotManager {
 							plot = new Plot(plotWorld, plot);
 						}
 						
-						Collection<IPlotSignData> rentSigns = plot.getSigns(PlotSignType2.FOR_RENT);
+						Collection<IPlotSignData> rentSigns = plot.getSigns(PlotSignType.FOR_RENT);
 						// iterate over all signs
 						for (IPlotSignData plotSign : rentSigns) {
 							if(!(plotSign instanceof IPlotSign)) {
 								// convert to IPlotSign
-								plotSign = PlotSignType2.createPlotSign((Plot)plot, plotSign);
+								plotSign = PlotSignType.createPlotSign((Plot)plot, plotSign);
 							}
 							// cast to ForRentSign
 							ForRentSign rentSign = (ForRentSign) plotSign;

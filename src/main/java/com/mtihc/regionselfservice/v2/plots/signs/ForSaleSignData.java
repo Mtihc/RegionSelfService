@@ -13,7 +13,7 @@ public class ForSaleSignData extends PlotSignData {
 	}
 
 	public ForSaleSignData(BlockVector coords) {
-		super(PlotSignType2.FOR_SALE, coords);
+		super(PlotSignType.FOR_SALE, coords);
 	}
 
 	public ForSaleSignData(Map<String, Object> values) {

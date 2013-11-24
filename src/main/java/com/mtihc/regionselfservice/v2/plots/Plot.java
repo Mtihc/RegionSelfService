@@ -14,7 +14,7 @@ import com.mtihc.regionselfservice.v2.plots.signs.ForRentSign;
 import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSign;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForSaleSignText;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
@@ -122,7 +122,7 @@ public class Plot extends PlotData {
 	public void setSign(IPlotSignData data) {
 		if(!(data instanceof IPlotSign)) {
 			// create sign from sign-data
-			data = PlotSignType2.createPlotSign(this, data);
+			data = PlotSignType.createPlotSign(this, data);
 		}
 		// set sign, as sign-data
 		super.setSign(data);
@@ -200,7 +200,7 @@ public class Plot extends PlotData {
 		// 
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
-			if(value.getType() != PlotSignType2.FOR_SALE) {
+			if(value.getType() != PlotSignType.FOR_SALE) {
 				// not a for-sale sign
 				continue;
 			}
@@ -227,7 +227,7 @@ public class Plot extends PlotData {
 		// 
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
-			if(value.getType() != PlotSignType2.FOR_RENT) {
+			if(value.getType() != PlotSignType.FOR_RENT) {
 				// not a for-rent sign
 				continue;
 			}

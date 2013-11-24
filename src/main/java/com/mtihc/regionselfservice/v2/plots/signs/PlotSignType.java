@@ -7,7 +7,7 @@ import com.mtihc.regionselfservice.v2.plots.IPlotSign;
 import com.mtihc.regionselfservice.v2.plots.IPlotSignData;
 import com.mtihc.regionselfservice.v2.plots.Plot;
 
-public enum PlotSignType2 {
+public enum PlotSignType {
 
 	FOR_RENT("For Rent"), FOR_SALE("For Sale");
 	
@@ -15,7 +15,7 @@ public enum PlotSignType2 {
 	private List<String> firstLineOptions;
 	private String[] defaultFirstLineOptions;
 	
-	private PlotSignType2(String name) {
+	private PlotSignType(String name) {
 		this.defaultFirstLineOptions = new String[]{name};
 		resetFirstLineOptions();
 	}
@@ -47,15 +47,15 @@ public enum PlotSignType2 {
 		}
 	}
 
-	public static PlotSignType2 getPlotSignType(String[] lines) {
+	public static PlotSignType getPlotSignType(String[] lines) {
 		String firstLine;
 		try {
 			firstLine = lines[0];
 		} catch(Exception e) {
 			firstLine = null;
 		}
-		PlotSignType2[] types = values();
-		for (PlotSignType2 type : types) {
+		PlotSignType[] types = values();
+		for (PlotSignType type : types) {
 			if(type.isFirstLineOption(firstLine)) {
 				return type;
 			}

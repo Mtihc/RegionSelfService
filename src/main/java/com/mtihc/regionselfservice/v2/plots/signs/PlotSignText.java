@@ -29,7 +29,7 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 		else return result;
 	}
 	
-	public static PlotSignType2 getPlotSignType(String[] lines) {
+	public static PlotSignType getPlotSignType(String[] lines) {
 		// get first string from array
 		String firstLine;
 		try {
@@ -38,8 +38,8 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 			return null;
 		}
 		// find corresponding type
-		PlotSignType2[] types = PlotSignType2.values();
-		for (PlotSignType2 type : types) {
+		PlotSignType[] types = PlotSignType.values();
+		for (PlotSignType type : types) {
 			if(type.isFirstLineOption(firstLine)) {
 				return type;
 			}
@@ -56,11 +56,11 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 	 * @throws SignException when there's incorrect text on the sign.
 	 */
 	public static PlotSignText<?> createText(PlotWorld plotWorld, String[] lines) throws SignException {
-		PlotSignType2 type = getPlotSignType(lines);
-		if(type == PlotSignType2.FOR_RENT) {
+		PlotSignType type = getPlotSignType(lines);
+		if(type == PlotSignType.FOR_RENT) {
 			return new ForRentSignText(plotWorld, lines);
 		}
-		else if(type == PlotSignType2.FOR_SALE) {
+		else if(type == PlotSignType.FOR_SALE) {
 			return new ForSaleSignText(plotWorld, lines);
 		}
 		else {
@@ -83,7 +83,7 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 	
 
 	private PlotWorld plotWorld;
-	private PlotSignType2 type;
+	private PlotSignType type;
 	private String regionId;
 	private Plot plot;
 	
@@ -93,7 +93,7 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 	 * @param type The type of sign
 	 * @param regionId The region id
 	 */
-	public PlotSignText(PlotWorld plotWorld, PlotSignType2 type, String regionId) {
+	public PlotSignText(PlotWorld plotWorld, PlotSignType type, String regionId) {
 		this.plotWorld = plotWorld;
 		this.type = type;
 		this.regionId = regionId;
@@ -127,7 +127,7 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 	 * The type of sign
 	 * @return the type
 	 */
-	public PlotSignType2 getPlotSignType() {
+	public PlotSignType getPlotSignType() {
 		return type;
 	}
 	
@@ -183,7 +183,7 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 		 * @param cost The sell cost
 		 */
 		public ForSaleSignText(PlotWorld plotWorld, String regionId, double cost) {
-			super(plotWorld, PlotSignType2.FOR_SALE, regionId);
+			super(plotWorld, PlotSignType.FOR_SALE, regionId);
 			this.sellCost = cost;
 		}
 		
@@ -260,7 +260,7 @@ public abstract class PlotSignText<T extends IPlotSignData> {
 		private long rentPlayerTime;
 
 		public ForRentSignText(PlotWorld plotWorld, String regionId) {
-			super(plotWorld, PlotSignType2.FOR_RENT, regionId);
+			super(plotWorld, PlotSignType.FOR_RENT, regionId);
 			this.rentCost = getPlot().getRentCost();
 			this.rentTime = getPlot().getRentTime();
 		}

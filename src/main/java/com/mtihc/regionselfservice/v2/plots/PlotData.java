@@ -10,7 +10,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.BlockVector;
 
 import com.mtihc.regionselfservice.v2.plots.signs.ForRentSignData;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
 
 public class PlotData implements ConfigurationSerializable {
 	
@@ -80,7 +80,7 @@ public class PlotData implements ConfigurationSerializable {
 	}
 	
 	public boolean isForSale() {
-		return hasSign(PlotSignType2.FOR_SALE);
+		return hasSign(PlotSignType.FOR_SALE);
 	}
 	
 	public double getSellCost() {
@@ -92,11 +92,11 @@ public class PlotData implements ConfigurationSerializable {
 	}
 	
 	public boolean isForRent() {
-		return hasSign(PlotSignType2.FOR_RENT);
+		return hasSign(PlotSignType.FOR_RENT);
 	}
 	
 	public boolean hasRenters() {
-		Collection<IPlotSignData> signs = getSigns(PlotSignType2.FOR_RENT);
+		Collection<IPlotSignData> signs = getSigns(PlotSignType.FOR_RENT);
 		for (IPlotSignData sign : signs) {
 			ForRentSignData rentSign = (ForRentSignData) sign;
 			if(rentSign.isRentedOut()) {
@@ -138,7 +138,7 @@ public class PlotData implements ConfigurationSerializable {
 		return signs.containsKey(coords);
 	}
 	
-	public boolean hasSign(PlotSignType2 type) {
+	public boolean hasSign(PlotSignType type) {
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
 			if(value == null) {
@@ -159,7 +159,7 @@ public class PlotData implements ConfigurationSerializable {
 		return getSigns(null);
 	}
 	
-	public Collection<IPlotSignData> getSigns(PlotSignType2 type) {
+	public Collection<IPlotSignData> getSigns(PlotSignType type) {
 		Collection<IPlotSignData> values = signs.values();
 		ArrayList<IPlotSignData> result = new ArrayList<IPlotSignData>();
 		for (IPlotSignData value : values) {
