@@ -404,15 +404,25 @@ public class PlotControl {
 			throw new PlotControlException("Sorry, region \"" + plot.getRegionId() + "\" isn't for rent. This is probably an old sign.");
 		}
 		
-		// TODO check if(rentSign.isRentedOut() && rentSign.getRentPlayer() == player.getName())
-		// then it's OK if he is already owner. We will just add extra time to his rent-time.
-		// Not a fan of that feature. Because there is no maximum.
-		// Maybe we can add a configuration to specify a maximum amount of time. But different regions should have different max time.
-		// So maybe we can add a configuration like... when the remaining time is below 10%, THEN you are allowed to extend the time. 
+		// check if(rentSign.getRentPlayer() == player.getName())
+		// then it's OK if he is already member. We will just add extra time to his rent-time.
+		// TODO add a configuration like... when the remaining time is below 10%, THEN you are allowed to extend the time. 
 
-		// already owner?
+		ForRentSign rentSign = (ForRentSign) plotSign;
+		
+		// already member?
 		if(region.isMember(player.getName())) {
-			throw new PlotControlException("You're already member of this region.");
+			if(rentSign.isRentedOut()) {
+				if(!player.getName().equals(rentSign.getRentPlayer())) {
+					// can't extend time via this sign
+					throw new PlotControlException("You're already member of this region. And you can't extend your rent time via this sign.");
+				}
+				// extending time
+			}
+			else {
+				throw new PlotControlException("You're already member of this region.");
+			}
+			
 		}
 		
 		// get owners for later
@@ -423,6 +433,7 @@ public class PlotControl {
 		
 		// get rent cost and time
 		final double cost = plot.getRentCost();
+		final long existingTime = rentSign.getRentPlayerTime();
 		final String timeString = new TimeStringConverter().convert(plot.getRentTime());
 
 		
@@ -473,25 +484,38 @@ public class PlotControl {
 				
 				// put player's name on the sign...
 				// put rent time on the sign
-				ForRentSignText rentText = new ForRentSignText(plotWorld, region.getId(), player.getName(), plot.getRentTime());
-				rentText.applyToSign(sign);
 				ForRentSign newPlotSign = new ForRentSign(plot, sign.getLocation().toVector().toBlockVector());
 				newPlotSign.setRentPlayer(player.getName());
-				newPlotSign.setRentPlayerTime(plot.getRentTime());
+				newPlotSign.setRentPlayerTime(existingTime + plot.getRentTime());
 				plot.setSign(newPlotSign);
 				plot.save();
+				
+
+				ForRentSignText rentText = new ForRentSignText(plotWorld, region.getId(), newPlotSign.getRentPlayer(), newPlotSign.getRentPlayerTime());
+				rentText.applyToSign(sign);
 				
 				// the time on the sign will update using a timer
 				// that timer starts whenever the server restarts
 				
 				
-				mgr.messages.rented(player, owners, members, plot.getRegionId(), cost, timeString);
+				if(existingTime > 0) {
+					String newTimeString = new TimeStringConverter().convert(existingTime + plot.getRentTime());
+					mgr.messages.rented(player, owners, members, plot.getRegionId(), cost, newTimeString);
+				}
+				else {
+					mgr.messages.rented(player, owners, members, plot.getRegionId(), cost, timeString);
+				}
 				return Prompt.END_OF_CONVERSATION;
 			}
 			
 			@Override
 			protected Prompt onNo() {
-				player.sendMessage(ChatColor.RED + "Did not rent region " + plot.getRegionId() + ".");
+				if(existingTime > 0) {
+					player.sendMessage(ChatColor.RED + "Did not extend rent time of region " + plot.getRegionId() + ".");
+				}
+				else {
+					player.sendMessage(ChatColor.RED + "Did not rent region " + plot.getRegionId() + ".");
+				}
 				return Prompt.END_OF_CONVERSATION;
 			}
 		};
@@ -502,11 +526,21 @@ public class PlotControl {
 					ChatColor.GREEN + "You have permission to skip payment. "
 							+ "The owners still receive money.");
 		}
-		player.sendMessage(
-				ChatColor.GREEN + "Are you sure you want to pay "+ ChatColor.WHITE 
-				+ mgr.getEconomy().format(cost) + ChatColor.GREEN +" to rent region " 
-						+ ChatColor.WHITE + region.getId() 
-						+ ChatColor.GREEN + " for " + ChatColor.WHITE + timeString + ChatColor.GREEN + "?");
+		
+		if(existingTime > 0) {
+			player.sendMessage(ChatColor.GREEN + "Are you sure you want to pay " + ChatColor.WHITE 
+					+ mgr.getEconomy().format(cost) + ChatColor.GREEN + " to extend the rent time of region " 
+					+ ChatColor.WHITE + region.getId() 
+					+ ChatColor.GREEN + " with " + ChatColor.WHITE + timeString + ChatColor.GREEN + "?");
+		}
+		else {
+			player.sendMessage(
+					ChatColor.GREEN + "Are you sure you want to pay "+ ChatColor.WHITE 
+					+ mgr.getEconomy().format(cost) + ChatColor.GREEN +" to rent region " 
+							+ ChatColor.WHITE + region.getId() 
+							+ ChatColor.GREEN + " for " + ChatColor.WHITE + timeString + ChatColor.GREEN + "?");
+		}
+		
 		// prompt for yes or no
 		new ConversationFactory(mgr.getPlugin())
 		.withFirstPrompt(prompt)
