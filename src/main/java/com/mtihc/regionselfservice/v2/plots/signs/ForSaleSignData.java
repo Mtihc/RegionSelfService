@@ -12,8 +12,8 @@ public class ForSaleSignData extends PlotSignData {
 		super(other);
 	}
 
-	public ForSaleSignData(PlotSignType<?> type, BlockVector coords) {
-		super(type, coords);
+	public ForSaleSignData(BlockVector coords) {
+		super(PlotSignType2.FOR_SALE, coords);
 	}
 
 	public ForSaleSignData(Map<String, Object> values) {

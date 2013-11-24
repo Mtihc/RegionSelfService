@@ -3,7 +3,6 @@ package com.mtihc.regionselfservice.v2.plots;
 import java.util.Collection;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -11,8 +10,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.util.BlockVector;
 
-import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
+import com.mtihc.regionselfservice.v2.plots.signs.ForRentSign;
+import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSign;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForSaleSignText;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 
@@ -118,13 +121,8 @@ public class Plot extends PlotData {
 	@Override
 	public void setSign(IPlotSignData data) {
 		if(!(data instanceof IPlotSign)) {
-			// not converted yet
-			try {
-				// create sign from sign-data
-				data = data.getType().createPlotSign(this, data);
-			} catch (SignException e) {
-				return;
-			}
+			// create sign from sign-data
+			data = PlotSignType2.createPlotSign(this, data);
 		}
 		// set sign, as sign-data
 		super.setSign(data);
@@ -173,11 +171,11 @@ public class Plot extends PlotData {
 		String worthString = manager.getEconomy().format(worth);
 		String sellCost = (isForSale() ? manager.getEconomy().format(getSellCost()) : "not for sale");
 		String rentCost = (isForRent() ? manager.getEconomy().format(getRentCost()) : "not for rent");
-		
+		String rentTime = new TimeStringConverter().convert(getRentTime());
 		String[] info = new String[] {
 				ChatColor.GOLD + "Worth: " + ChatColor.YELLOW + worthString + ChatColor.GOLD + " based on size",
 				ChatColor.GOLD + "Sell cost: " + ChatColor.YELLOW + sellCost,
-				ChatColor.GOLD + "Rent cost: " + ChatColor.YELLOW + rentCost
+				ChatColor.GOLD + "Rent cost: " + ChatColor.YELLOW + rentCost + " for " + rentTime
 		};
 		
 		// send messages with region info
@@ -200,21 +198,21 @@ public class Plot extends PlotData {
 		// 
 		// update wooden signs
 		// 
-		World world = plotWorld.getWorld();
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
-			if(value.getType() != PlotSignType.FOR_SALE) {
+			if(value.getType() != PlotSignType2.FOR_SALE) {
 				// not a for-sale sign
 				continue;
 			}
-			Location loc = value.getBlockVector().toLocation(world);
-			Block block = loc.getBlock();
-			// check if block is still a wooden sign
-			if(block.getState() instanceof Sign) {
-				// update text on sign
-				Sign sign = (Sign) block.getState();
-				sign.setLine(1, String.valueOf(cost));
+			ForSaleSign saleSign = (ForSaleSign) value;
+			
+			Sign sign = saleSign.getSign();
+			if(sign == null) {
+				continue;
 			}
+			ForSaleSignText text = new ForSaleSignText(plotWorld, regionId, cost);
+			text.applyToSign(sign);
+			sign.update();
 		}
 	}
 
@@ -222,28 +220,34 @@ public class Plot extends PlotData {
 	 * @see com.mtihc.regionselfservice.v2.plots.PlotData#setRentCost(double)
 	 */
 	@Override
-	public void setRentCost(double cost) {
-		super.setRentCost(cost);
+	public void setRentCost(double cost, long millisec) {
+		super.setRentCost(cost, millisec);
 		// 
 		// update wooden signs
 		// 
-		World world = plotWorld.getWorld();
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
-			if(value.getType() != PlotSignType.FOR_RENT) {
+			if(value.getType() != PlotSignType2.FOR_RENT) {
 				// not a for-rent sign
 				continue;
 			}
-			Location loc = value.getBlockVector().toLocation(world);
-			Block block = loc.getBlock();
-			// check if block is still a wooden sign
-			if(block.getState() instanceof Sign) {
-				// update text on sign
-				Sign sign = (Sign) block.getState();
-				sign.setLine(1, String.valueOf(cost));// TODO add time?
+			
+			ForRentSign rentSign = (ForRentSign) value;
+			if(rentSign.isRentedOut()) {
+				continue;
 			}
+			
+			Sign sign = rentSign.getSign();
+			if(sign == null) {
+				continue;
+			}
+			ForRentSignText text = new ForRentSignText(plotWorld, regionId);
+			text.setRentCost(cost);
+			text.setRentTime(millisec);
+			text.applyToSign(sign);
 		}
 	}
+	
 	
 	
 }

@@ -17,8 +17,8 @@ public class ForRentSignData extends PlotSignData {
 		this.rentPlayerTime = other.rentPlayerTime;
 	}
 
-	public ForRentSignData(PlotSignType<?> type, BlockVector coords) {
-		super(type, coords);
+	public ForRentSignData(BlockVector coords) {
+		super(PlotSignType2.FOR_RENT, coords);
 		// when sign is created, nobody is renting yet
 		this.rentPlayer = null;
 		this.rentPlayerTime = 0;
@@ -27,7 +27,7 @@ public class ForRentSignData extends PlotSignData {
 	public ForRentSignData(Map<String, Object> values) {
 		super(values);
 		this.rentPlayer = (String) values.get("rent-player");
-		this.rentPlayerTime = (Long) values.get("rent-player-time");
+		this.rentPlayerTime = (Integer) values.get("rent-player-time");
 	}
 
 	/* (non-Javadoc)
@@ -57,5 +57,8 @@ public class ForRentSignData extends PlotSignData {
 		this.rentPlayerTime = millisec;
 	}
 	
+	public boolean isRentedOut() {
+		return rentPlayer != null;
+	}
 
 }

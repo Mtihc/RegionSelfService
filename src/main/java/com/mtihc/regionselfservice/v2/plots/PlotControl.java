@@ -25,7 +25,10 @@ import com.mtihc.regionselfservice.v2.plots.exceptions.EconomyException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotBoundsException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.PlotControlException;
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
+import com.mtihc.regionselfservice.v2.plots.signs.ForRentSign;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.worldedit.bukkit.selections.Selection;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.domains.DefaultDomain;
@@ -177,7 +180,7 @@ public class PlotControl {
 			throw new PlotControlException("Couldn't find plot-sign information.");
 		}
 		
-		if(plotSign.getType() != PlotSignType.FOR_SALE) {
+		if(plotSign.getType() != PlotSignType2.FOR_SALE) {
 			// plot-sign is not a for-sale sign
 			throw new PlotControlException("You're not looking at a for-sale sign.");
 		}
@@ -244,6 +247,10 @@ public class PlotControl {
 			throw new PlotControlException("You only have "+mgr.getEconomy().format(balance)+". You still require " + mgr.getEconomy().format(cost - balance) + ".");
 		}
 		
+		if(plot.hasRenters()) {
+			throw new PlotControlException("You can't buy this region. The current owner is still renting it out to other players.");
+		}
+		
 		// create YesNoPrompt
 		YesNoPrompt prompt = new YesNoPrompt() {
 			
@@ -300,7 +307,7 @@ public class PlotControl {
 				}
 
 				// break all for sale signs
-				Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
+				Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType2.FOR_SALE);
 				for (IPlotSignData data : forSaleSigns) {
 					BlockVector vec = data.getBlockVector();
 					plot.removeSign(vec);
@@ -347,7 +354,7 @@ public class PlotControl {
 	
 	public void rent(final Player player) throws PlotControlException {
 		// get targeted sign
-		Sign sign = getTargetSign(player);
+		final Sign sign = getTargetSign(player);
 		if(sign == null) {
 			throw new PlotControlException("You're not looking at a wooden sign.");
 		}
@@ -380,7 +387,7 @@ public class PlotControl {
 			throw new PlotControlException("Couldn't find plot-sign information.");
 		}
 		
-		if(plotSign.getType() != PlotSignType.FOR_RENT) {
+		if(plotSign.getType() != PlotSignType2.FOR_RENT) {
 			// plot-sign is not a for-rent sign
 			throw new PlotControlException("You're not looking at a for-rent sign.");
 		}
@@ -391,10 +398,17 @@ public class PlotControl {
 			throw new PlotControlException("Sorry, the region doesn't exist anymore.");
 		}
 
-		// not for rent?
+		// not for rent
+		// this check is probably not even needed
 		if(!plot.isForRent()) {
 			throw new PlotControlException("Sorry, region \"" + plot.getRegionId() + "\" isn't for rent. This is probably an old sign.");
 		}
+		
+		// TODO check if(rentSign.isRentedOut() && rentSign.getRentPlayer() == player.getName())
+		// then it's OK if he is already owner. We will just add extra time to his rent-time.
+		// Not a fan of that feature. Because there is no maximum.
+		// Maybe we can add a configuration to specify a maximum amount of time. But different regions should have different max time.
+		// So maybe we can add a configuration like... when the remaining time is below 10%, THEN you are allowed to extend the time. 
 
 		// already owner?
 		if(region.isMember(player.getName())) {
@@ -407,10 +421,9 @@ public class PlotControl {
 		final Set<String> members = region.getMembers().getPlayers();
 		
 		
-		// TODO get rent cost, and time
-		// get rent cost
+		// get rent cost and time
 		final double cost = plot.getRentCost();
-		final String timeString = null;
+		final String timeString = new TimeStringConverter().convert(plot.getRentTime());
 
 		
 		// check bypasscost || pay for region
@@ -448,7 +461,7 @@ public class PlotControl {
 				}
 				
 				// add renter as member
-				region.getOwners().addPlayer(player.getName());
+				region.getMembers().addPlayer(player.getName());
 				
 				// save region owner changes
 				try {
@@ -458,10 +471,19 @@ public class PlotControl {
 					mgr.getPlugin().getLogger().log(Level.WARNING, ChatColor.RED + msg, e);
 				}
 				
-				// TODO put player's name on the sign...
-				// TODO put rent time on the sign. and update every minute using a timer
-				// timer will be for every plot that has renters.
-				// TODO restart timers when the server restarts
+				// put player's name on the sign...
+				// put rent time on the sign
+				ForRentSignText rentText = new ForRentSignText(plotWorld, region.getId(), player.getName(), plot.getRentTime());
+				rentText.applyToSign(sign);
+				ForRentSign newPlotSign = new ForRentSign(plot, sign.getLocation().toVector().toBlockVector());
+				newPlotSign.setRentPlayer(player.getName());
+				newPlotSign.setRentPlayerTime(plot.getRentTime());
+				plot.setSign(newPlotSign);
+				plot.save();
+				
+				// the time on the sign will update using a timer
+				// that timer starts whenever the server restarts
+				
 				
 				mgr.messages.rented(player, owners, members, plot.getRegionId(), cost, timeString);
 				return Prompt.END_OF_CONVERSATION;
@@ -481,10 +503,10 @@ public class PlotControl {
 							+ "The owners still receive money.");
 		}
 		player.sendMessage(
-				ChatColor.GREEN + "Are you sure you want to rent region " 
+				ChatColor.GREEN + "Are you sure you want to pay "+ ChatColor.WHITE 
+				+ mgr.getEconomy().format(cost) + ChatColor.GREEN +" to rent region " 
 						+ ChatColor.WHITE + region.getId() 
-						+ ChatColor.GREEN + " for " + ChatColor.WHITE 
-						+ mgr.getEconomy().format(cost) + ChatColor.GREEN + "?");// TODO add time to message
+						+ ChatColor.GREEN + " for " + ChatColor.WHITE + timeString + ChatColor.GREEN + "?");
 		// prompt for yes or no
 		new ConversationFactory(mgr.getPlugin())
 		.withFirstPrompt(prompt)
@@ -606,9 +628,6 @@ public class PlotControl {
 			throw new PlotControlException("Your selection overlaps with someone else's region.");
 		}
 		
-		// TODO this needs another look-over? 
-		// Why not do automatic parent, outside else-statement?
-		// What's up with that permission?
 		else {
 			// not overlapping or it's allowed to overlap
 			
@@ -901,9 +920,6 @@ public class PlotControl {
 						} else {
 							// smaller region, refunds money to the owners
 							
-							// TODO should this refund money to the player instead?? 
-							// if so, the messages should be edited
-							
 							// calculate share
 							double share = Math.abs(cost) / Math.max(1, ownerList.size());
 							// refund equal share to owners
@@ -1002,7 +1018,10 @@ public class PlotControl {
 		
 		
 
-		// TODO check if there are still renters
+		// check if there are still renters
+		if(plot.hasRenters()) {
+			throw new PlotControlException("You can't delete this region when players are still renting it.");
+		}
 		
 		Set<String> ownerList;
 		if(region != null) {
@@ -1092,7 +1111,7 @@ public class PlotControl {
 						
 						
 						// break all for sale signs
-						Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType.FOR_SALE);
+						Collection<IPlotSignData> forSaleSigns = plot.getSigns(PlotSignType2.FOR_SALE);
 						for (IPlotSignData data : forSaleSigns) {
 							BlockVector vec = data.getBlockVector();
 							plot.removeSign(vec);

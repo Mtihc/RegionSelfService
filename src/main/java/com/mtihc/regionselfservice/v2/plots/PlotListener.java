@@ -23,7 +23,13 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.BlockVector;
 
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
+import com.mtihc.regionselfservice.v2.plots.signs.ForRentSign;
+import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSign;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForSaleSignText;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
+import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 class PlotListener implements Listener {
@@ -44,38 +50,33 @@ class PlotListener implements Listener {
 		}
 		
 		Sign sign = (Sign) event.getBlock().getState();
-		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, event.getLines());
+		PlotSignType2 type = PlotSignType2.getPlotSignType(event.getLines());
 		if(type == null) {
 			return;// not a plot-sign
 		}
 		
 		// player
 		Player player = event.getPlayer();
-
-		// region id
-		String regionId = PlotSignType.getRegionId(sign, event.getLines());
-		if(regionId == null || regionId.isEmpty()) {
-			player.sendMessage(ChatColor.RED + "Couldn't find a region id on this plot sign.");
-			return;
-		}
 		
 		// plot world
 		World world = sign.getWorld();
 		PlotWorld plotWorld = mgr.getPlotWorld(world.getName());
 		
+		
+
 		Plot plot;
-		IPlotSignData plotSign;
+		PlotSignText<?> signText;
+		IPlotSign plotSign;
 		
 		try {
+			// try to read the sign
+			signText = PlotSignText.createText(plotWorld, event.getLines());
 			
 			// get plot data
- 			plot = plotWorld.getPlot(regionId);
+ 			plot = plotWorld.getPlot(signText.getRegionId());
 			
-			// create sign data
-			plotSign = type.createPlotSign(plot, sign, event.getLines());
-			
-			// add sign to plot data
-			plot.setSign(plotSign);
+			// create sign data... later
+			// add sign to plot... later
 			
 		} catch (SignException e) {
 			// invalid sign
@@ -101,7 +102,7 @@ class PlotListener implements Listener {
 		
 		IPlotWorldConfig config = plot.getPlotWorld().getConfig();
 
-		if(type == PlotSignType.FOR_RENT) {
+		if(type == PlotSignType2.FOR_RENT) {
 			
 			// check permission to rent out
 			if(!player.hasPermission(Permission.RENTOUT)) {
@@ -128,26 +129,29 @@ class PlotListener implements Listener {
 			}
 			
 			
+			ForRentSignText rentText = (ForRentSignText) signText;
+			// check if is rented out, then player typed a name on the sign instead of cost
+			if(rentText.isRentedOut()) {
+				player.sendMessage(ChatColor.RED + "Invalid sign text. Expected rent-cost and rent-time.");
+				event.setCancelled(true);
+				sign.getBlock().breakNaturally();
+				return;
+			}
 			
 			double rentCostOld = plot.getRentCost();
-			double rentCost;
-			try {
-				// TODO get rent time
-				rentCost = Double.parseDouble(event.getLine(1).trim());
-			} catch(Exception e) {
-				rentCost = rentCostOld;
-			}
-			event.setLine(1, String.valueOf(rentCost));
+			double rentCost = rentText.getRentCost();
+			long rentTimeOld = plot.getRentTime();
+			long rentTime = rentText.getRentTime();
+			
+			rentText.applyToSign(event);
 			
 			// check min/max cost
 			double minRentCost = plot.getWorth(config.getOnRentMinBlockCost());
 			double maxRentCost = plot.getWorth(config.getOnRentMaxBlockCost());
-			minRentCost = plot.getWorth(minRentCost);
-			maxRentCost = plot.getWorth(maxRentCost);
-			
 			if(rentCost < minRentCost) {
 				player.sendMessage(ChatColor.RED + "The price is too low.");
 				// TODO The rent-price must be between minRentCost per minRentTime and maxRentCost per maxRentTime.
+				// So we need to add time to the config. Orrrr interpret the min/max rent cost as "rent cost per hour"
 				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -156,6 +160,7 @@ class PlotListener implements Listener {
 			else if(rentCost > maxRentCost) {
 				player.sendMessage(ChatColor.RED + "The price is too high.");
 				// TODO The rent-price must be between minRentCost per minRentTime and maxRentCost per maxRentTime.
+				// So we need to add time to the config. Orrrr interpret the min/max rent cost as "rent cost per hour"
 				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
@@ -172,16 +177,18 @@ class PlotListener implements Listener {
 				}
 			}
 			
-			if(rentCostOld != rentCost) {
-				plot.setRentCost(rentCost);
+			if(rentCostOld != rentCost || rentTimeOld != rentTime) {
+				plot.setRentCost(rentCost, rentTime);
 			}
+			plotSign = new ForRentSign(plot, sign.getLocation().toVector().toBlockVector());
+			// no need to set extra data at this point
 			
 			mgr.messages.upForRent(player, 
 					region.getOwners().getPlayers(), 
 					region.getMembers().getPlayers(), 
-					regionId, rentCost, "1h");
+					region.getId(), rentCost, new TimeStringConverter().convert(rentTime));
 		}
-		else if(type == PlotSignType.FOR_SALE) {
+		else if(type == PlotSignType2.FOR_SALE) {
 			
 			// check permission to sell
 			if(!player.hasPermission(Permission.SELL)) {
@@ -225,20 +232,14 @@ class PlotListener implements Listener {
 				return;
 			}
 
+			ForSaleSignText saleText = (ForSaleSignText) signText;
 			double sellCostOld = plot.getSellCost();
-			double sellCost;
-			try {
-				sellCost = Double.parseDouble(event.getLine(1));
-			} catch(Exception e) {
-				sellCost = sellCostOld;
-			}
-			event.setLine(1, String.valueOf(sellCost));
+			double sellCost = saleText.getSellCost();
+			signText.applyToSign(event.getLines());
 			
 			// check min/max cost
 			double minSellCost = plot.getWorth(config.getOnSellMinBlockCost());
 			double maxSellCost = plot.getWorth(config.getOnSellMaxBlockCost());
-			minSellCost = plot.getWorth(minSellCost);
-			maxSellCost = plot.getWorth(maxSellCost);
 			
 			if(sellCost < minSellCost) {
 				player.sendMessage(ChatColor.RED + "The price is too low.");
@@ -268,11 +269,13 @@ class PlotListener implements Listener {
 			if(sellCostOld != sellCost) {
 				plot.setSellCost(sellCost);
 			}
+			plotSign = new ForSaleSign(plot, sign.getLocation().toVector().toBlockVector());
+			// no need to set extra data at this point
 			
 			mgr.messages.upForSale(player, 
 					region.getOwners().getPlayers(), 
 					region.getMembers().getPlayers(), 
-					regionId, sellCost);
+					region.getId(), sellCost);
 			
 		}
 		else {
@@ -280,11 +283,7 @@ class PlotListener implements Listener {
 			return;
 		}
 		
-		// TODO plot-sign change event, synced
-		// event includes Sign, ISign, Plot, Player
-		// 
-		// if (event is cancelled) don't save plot and break sign
-		
+		// save new sign data
 		plot.setSign(plotSign);
 		plot.save();
 		
@@ -306,7 +305,7 @@ class PlotListener implements Listener {
 			return;// not a sign
 		}
 		Sign sign = (Sign) event.getClickedBlock().getState();
-		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, sign.getLines());
+		PlotSignType2 type = PlotSignType2.getPlotSignType(sign.getLines());
 		if(type == null) {
 			return;// not a plot-sign
 		}
@@ -343,11 +342,7 @@ class PlotListener implements Listener {
 
 		// send plot info
 		plot.sendInfo(event.getPlayer());
-		// TODO plot-sign info event, synced
-		// event includes Sign, ISign, Plot, Player and list of messages
 		
-		
-		//event.setCancelled(true);
 	}
 	
 	@EventHandler
@@ -395,12 +390,12 @@ class PlotListener implements Listener {
 		}
 		// broke a sign. or a block with a sign attached to it.
 		
-		PlotSignType<?> type = PlotSignType.getPlotSignType(sign, sign.getLines());
+		PlotSignType2 type = PlotSignType2.getPlotSignType(sign.getLines());
 		if(type == null) {
 			return;// not a plot-sign
 		}
 		
-		String regionId = PlotSignType.getRegionId(sign, sign.getLines());
+		String regionId = PlotSignText.getRegionId(sign.getLines());
 		
 		PlotWorld plotWorld = mgr.getPlotWorld(sign.getWorld().getName());
 		

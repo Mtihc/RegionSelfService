@@ -4,18 +4,24 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.block.Sign;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.mtihc.regionselfservice.v2.plots.signs.ForRentSign;
 import com.mtihc.regionselfservice.v2.plots.signs.ForRentSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSignData;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.databases.ProtectionDatabaseException;
 
 public abstract class PlotManager {
 
@@ -55,6 +61,78 @@ public abstract class PlotManager {
 		Listener listener = new PlotListener(this);
 		Bukkit.getPluginManager().registerEvents(listener, plugin);
 		
+		Runnable rentTimer = new Runnable() {
+			
+			@Override
+			public void run() {
+				Collection<PlotWorld> plotWorlds = worlds.values();
+				// iterate over all PlotWorlds
+				for (PlotWorld plotWorld : plotWorlds) {
+					boolean requireSave = false;
+					Collection<PlotData> plots = plotWorld.getPlotData().getValues();
+					// iterate over all plots
+					for (PlotData plot : plots) {
+						
+						if(!(plot instanceof Plot)) {
+							// convert to Plot object
+							plot = new Plot(plotWorld, plot);
+						}
+						
+						Collection<IPlotSignData> rentSigns = plot.getSigns(PlotSignType2.FOR_RENT);
+						// iterate over all signs
+						for (IPlotSignData plotSign : rentSigns) {
+							if(!(plotSign instanceof IPlotSign)) {
+								// convert to IPlotSign
+								plotSign = PlotSignType2.createPlotSign((Plot)plot, plotSign);
+							}
+							// cast to ForRentSign
+							ForRentSign rentSign = (ForRentSign) plotSign;
+							if(!rentSign.isRentedOut()) {
+								// does not need to be updated
+								continue;
+							}
+							// get sign
+							Sign sign = rentSign.getSign();
+							// subtract a minute
+							long newTime = rentSign.getRentPlayerTime() - 60000;
+							if(newTime <= 0) {
+								// time is up
+								newTime = 0;
+								
+								// remove region member
+								((Plot)plot).getRegion().getMembers().removePlayer(rentSign.getRentPlayer());
+								requireSave = true;
+								// remove player name from sign
+								rentSign.setRentPlayer(null);
+								rentSign.setRentPlayerTime(newTime);
+								
+							}
+							// update time on the sign data
+							rentSign.setRentPlayerTime(newTime);
+							
+							// update sign 
+							// if rent-player is null, it will automatically write cost:time instead of player:time
+							ForRentSignText rentText = new ForRentSignText(plotWorld, plot.getRegionId(), rentSign.getRentPlayer(), newTime);
+							rentText.applyToSign(sign);
+						}
+						// save changes
+						((Plot) plot).save();
+					}
+					if(requireSave) {
+						try {
+							plotWorld.getRegionManager().save();
+						} catch (ProtectionDatabaseException error) {
+							PlotManager.this.plugin.getLogger().log(
+									Level.SEVERE,
+									"Failed to remove member(s) that ran out of rent-time from region(s) in world \""+plotWorld.getName()+"\".", 
+									error);
+						}
+					}
+					
+				}
+			}
+		};
+		Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, rentTimer, 0, 60 * 20);
 	}
 	
 	public IPlotWorldConfig getDefaultWorldConfig() {

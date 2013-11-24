@@ -37,8 +37,8 @@ public class PlotCommand extends SimpleCommand {
 		addNested("delete");
 		addNested("info");
 		addNested("reload");
-		//setNested("rent");
-		//setNested("sell");
+		addNested("rent");
+		//addNested("sell");
 		addNested("worth");
 	}
 	
@@ -330,7 +330,6 @@ public class PlotCommand extends SimpleCommand {
 		sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
 	}
 	
-	// TODO rent command
 	@Command(aliases = { "rent" }, args = "", desc = "Rent a region", help = { "" }, perm = Permission.RENT)
 	public void rent(CommandSender sender, String[] args) throws CommandException {
 		Player player = getPlayer(sender);

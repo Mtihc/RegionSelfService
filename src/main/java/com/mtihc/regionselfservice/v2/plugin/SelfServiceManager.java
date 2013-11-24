@@ -41,11 +41,11 @@ public class SelfServiceManager extends PlotManager {
 		config.getConfig().setDefaults(
 				((PlotWorldConfigDefault) defaultConfig).getConfig());
 
-		PlotDataRepository plots = new PlotDataRepository(worldDir, plugin.getLogger()) {
+		PlotDataRepository plots = new PlotDataRepository(worldDir + "\\regions", plugin.getLogger()) {
 
 			@Override
 			protected String getPathByKey(String regionId) {
-				return directory + "\\regions\\" + regionId + ".yml";
+				return directory + "\\" + regionId + ".yml";
 			}
 			
 		};

@@ -9,7 +9,8 @@ import java.util.Map;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.BlockVector;
 
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
+import com.mtihc.regionselfservice.v2.plots.signs.ForRentSignData;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType2;
 
 public class PlotData implements ConfigurationSerializable {
 	
@@ -41,7 +42,7 @@ public class PlotData implements ConfigurationSerializable {
 		this.regionId = (String) values.get("region-id");
 		this.sellCost = (Double) values.get("sell-cost");
 		this.rentCost = (Double) values.get("rent-cost");
-		this.rentTime = (Long) values.get("rent-time");
+		this.rentTime = (Integer) values.get("rent-time");
 		
 		Map<?, ?> signsSection = (Map<?, ?>) values.get("signs");
 		if(signsSection != null) {
@@ -79,7 +80,7 @@ public class PlotData implements ConfigurationSerializable {
 	}
 	
 	public boolean isForSale() {
-		return hasSign(PlotSignType.FOR_SALE);
+		return hasSign(PlotSignType2.FOR_SALE);
 	}
 	
 	public double getSellCost() {
@@ -91,22 +92,30 @@ public class PlotData implements ConfigurationSerializable {
 	}
 	
 	public boolean isForRent() {
-		return hasSign(PlotSignType.FOR_RENT);
+		return hasSign(PlotSignType2.FOR_RENT);
+	}
+	
+	public boolean hasRenters() {
+		Collection<IPlotSignData> signs = getSigns(PlotSignType2.FOR_RENT);
+		for (IPlotSignData sign : signs) {
+			ForRentSignData rentSign = (ForRentSignData) sign;
+			if(rentSign.isRentedOut()) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public double getRentCost() {
 		return rentCost;
 	}
 	
-	public void setRentCost(double cost) {
-		this.rentCost = cost;
-	}
-	
 	public long getRentTime() {
 		return rentTime;
 	}
 	
-	public void setRentTime(long millisec) {
+	public void setRentCost(double cost, long millisec) {
+		this.rentCost = cost;
 		this.rentTime = millisec;
 	}
 	
@@ -129,7 +138,7 @@ public class PlotData implements ConfigurationSerializable {
 		return signs.containsKey(coords);
 	}
 	
-	public boolean hasSign(PlotSignType<?> type) {
+	public boolean hasSign(PlotSignType2 type) {
 		Collection<IPlotSignData> values = signs.values();
 		for (IPlotSignData value : values) {
 			if(value == null) {
@@ -150,7 +159,7 @@ public class PlotData implements ConfigurationSerializable {
 		return getSigns(null);
 	}
 	
-	public Collection<IPlotSignData> getSigns(PlotSignType<?> type) {
+	public Collection<IPlotSignData> getSigns(PlotSignType2 type) {
 		Collection<IPlotSignData> values = signs.values();
 		ArrayList<IPlotSignData> result = new ArrayList<IPlotSignData>();
 		for (IPlotSignData value : values) {

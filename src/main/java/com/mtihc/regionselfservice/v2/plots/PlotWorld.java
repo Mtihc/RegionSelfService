@@ -8,7 +8,7 @@ import org.bukkit.World;
 import org.bukkit.block.Sign;
 
 import com.mtihc.regionselfservice.v2.plots.exceptions.SignException;
-import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
+import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 
 public class PlotWorld {
@@ -57,7 +57,7 @@ public class PlotWorld {
 	}
 	
 	public Plot getPlot(Sign sign) throws SignException {
-		String regionId = PlotSignType.getRegionId(sign, sign.getLines());
+		String regionId = PlotSignText.getRegionId(sign.getLines());
 		return getPlot(regionId);
 	}
 	
