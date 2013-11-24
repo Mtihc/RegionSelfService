@@ -40,22 +40,12 @@ public class SelfServicePlugin extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		WorldGuardPlugin worldGuard = setupWorldGuard();
-		if(worldGuard == null) {
-			getLogger().log(Level.SEVERE, "Couldn't find WorldGuard plugin.");
-			
-			setEnabled(false);
+		IEconomy economy = setupEconomy();
+		
+		if(worldGuard == null || economy == null) {
+			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
-		
-		Economy vault = setupEconomy();
-		if(vault == null) {
-			getLogger().log(Level.SEVERE, "Couldn't find Vault plugin.");
-			
-			setEnabled(false);
-			return;
-		}
-		
-		IEconomy economy = new EconomyVault(vault, getLogger());
 		
 		this.config = new PlotManagerConfig(this, getDataFolder() + File.separator + "config.yml");
 		
@@ -140,32 +130,43 @@ public class SelfServicePlugin extends JavaPlugin {
 		config.save();
 	}
 	
-	
-	
-	
-	
 	private WorldGuardPlugin setupWorldGuard() {
 		Plugin worldGuardPlugin = Bukkit.getPluginManager().getPlugin("WorldGuard");
 		if(worldGuardPlugin == null || !(worldGuardPlugin instanceof WorldGuardPlugin)) {
+			getLogger().log(Level.SEVERE, ChatColor.RED + " Couldn't find WorldGuard plugin. Please install WorldEdit and WorldGuard.");
 			return null;
 		}
 		else {
+			getLogger().log(Level.INFO, " Protection plugin found: ");
+			getLogger().log(Level.INFO, "    " + worldGuardPlugin.getDescription().getFullName());
 			return (WorldGuardPlugin) worldGuardPlugin;
 		}
 	}
 	
-	private Economy setupEconomy() {
-        if (getServer().getPluginManager().getPlugin("Vault") == null) {
-            return null;
+	private IEconomy setupEconomy() {
+		Plugin vault = getServer().getPluginManager().getPlugin("Vault"); 
+		RegisteredServiceProvider<Economy> rsp = null;
+		Economy econ = null;
+		if (vault != null) {
+			rsp = getServer().getServicesManager().getRegistration(Economy.class);
+	        if(rsp != null) {
+	        	econ = rsp.getProvider();
+	        }
         }
-        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+
         if (rsp == null) {
-            return null;
-        }
-        Economy econ = rsp.getProvider();
-        if(econ == null) {
+        	getLogger().log(Level.SEVERE, ChatColor.RED + " Couldn't find Vault plugin. Please install Vault and an economy plugin.");
         	return null;
         }
-        return econ;
-    }
+        else if(econ == null) {
+        	getLogger().log(Level.SEVERE, ChatColor.RED + " Vault couldn't find an economy plugin. Please install an economy plugin that is supported by Vault.");
+        	return null;
+        }
+        else {
+        	getLogger().log(Level.INFO, " Economy plugin found: ");
+        	getLogger().log(Level.INFO, "    " + vault.getDescription().getFullName() + " (" + econ.getName() + ")");
+        	return new EconomyVault(econ, getLogger());
+        }
+        
+	}
 }
