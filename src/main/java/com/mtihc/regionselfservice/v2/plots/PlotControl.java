@@ -409,7 +409,8 @@ public class PlotControl {
 		// TODO add a configuration like... when the remaining time is below 10%, THEN you are allowed to extend the time. 
 
 		ForRentSign rentSign = (ForRentSign) plotSign;
-		
+
+		final long remainingTime = rentSign.getRentPlayerTime();
 		// already member?
 		if(region.isMember(player.getName())) {
 			if(rentSign.isRentedOut()) {
@@ -417,7 +418,20 @@ public class PlotControl {
 					// can't extend time via this sign
 					throw new PlotControlException("You're already member of this region. And you can't extend your rent time via this sign.");
 				}
-				// extending time
+				else {
+					// extending time
+					
+					// when is it allowed?
+					long allowExtendAtRemaining = plot.getRentTimeExtendAllowedAt();
+					
+					// check if it's too soon
+					if(remainingTime > allowExtendAtRemaining) {
+						
+						// too soon to extend rent time
+						throw new PlotControlException("You can't extend the rent time yet. You have to wait " + new TimeStringConverter().convert(remainingTime - allowExtendAtRemaining) + ".");
+						
+					}
+				}
 			}
 			else {
 				throw new PlotControlException("You're already member of this region.");
@@ -433,7 +447,6 @@ public class PlotControl {
 		
 		// get rent cost and time
 		final double cost = plot.getRentCost();
-		final long existingTime = rentSign.getRentPlayerTime();
 		final String timeString = new TimeStringConverter().convert(plot.getRentTime());
 
 		
@@ -486,7 +499,7 @@ public class PlotControl {
 				// put rent time on the sign
 				ForRentSign newPlotSign = new ForRentSign(plot, sign.getLocation().toVector().toBlockVector());
 				newPlotSign.setRentPlayer(player.getName());
-				newPlotSign.setRentPlayerTime(existingTime + plot.getRentTime());
+				newPlotSign.setRentPlayerTime(remainingTime + plot.getRentTime());
 				plot.setSign(newPlotSign);
 				plot.save();
 				
@@ -498,8 +511,8 @@ public class PlotControl {
 				// that timer starts whenever the server restarts
 				
 				
-				if(existingTime > 0) {
-					String newTimeString = new TimeStringConverter().convert(existingTime + plot.getRentTime());
+				if(remainingTime > 0) {
+					String newTimeString = new TimeStringConverter().convert(remainingTime + plot.getRentTime());
 					mgr.messages.rented(player, owners, members, plot.getRegionId(), cost, newTimeString);
 				}
 				else {
@@ -510,7 +523,7 @@ public class PlotControl {
 			
 			@Override
 			protected Prompt onNo() {
-				if(existingTime > 0) {
+				if(remainingTime > 0) {
 					player.sendMessage(ChatColor.RED + "Did not extend rent time of region " + plot.getRegionId() + ".");
 				}
 				else {
@@ -527,7 +540,7 @@ public class PlotControl {
 							+ "The owners still receive money.");
 		}
 		
-		if(existingTime > 0) {
+		if(remainingTime > 0) {
 			player.sendMessage(ChatColor.GREEN + "Are you sure you want to pay " + ChatColor.WHITE 
 					+ mgr.getEconomy().format(cost) + ChatColor.GREEN + " to extend the rent time of region " 
 					+ ChatColor.WHITE + region.getId() 

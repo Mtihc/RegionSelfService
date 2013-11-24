@@ -232,4 +232,13 @@ public class PlotWorldConfig extends YamlFile implements IPlotWorldConfig {
 		getConfig().set("percent_delete_refund", value);
 	}
 
+	@Override
+	public double getAllowRentExtendAfterPercentTime() {
+		return getConfig().getDouble("allow_rent_extend_after_percent_time");
+	}
+	
+	public void setAllowRentExtendAfterPercentTime(double value) {
+		getConfig().set("allow_rent_extend_after_percent_time", value);
+	}
+
 }

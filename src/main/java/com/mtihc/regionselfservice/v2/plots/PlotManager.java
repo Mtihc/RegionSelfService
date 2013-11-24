@@ -7,9 +7,11 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.block.Sign;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -120,6 +122,21 @@ public abstract class PlotManager {
 								// remove player name from sign
 								rentSign.setRentPlayer(null);
 								
+							}
+							else {
+								if(newTime <= ((Plot)plot).getRentTimeExtendAllowedAt()) {
+									// TODO move code to messages.rent_extend_warning method
+									// TODO implement permission for this information
+									Player renter = Bukkit.getPlayerExact(rentSign.getRentPlayer());
+									if(renter != null) {
+										renter.sendMessage(
+												ChatColor.GREEN + "If you want to stay member of region " 
+										+ ChatColor.WHITE + plot.getRegionId() 
+										+ ChatColor.GREEN + ", you should extend the rent time now. You have " 
+										+ ChatColor.WHITE + new TimeStringConverter().convert(newTime) 
+										+ ChatColor.GREEN + " remaining.");
+									}
+								}
 							}
 							// update time on the sign data
 							rentSign.setRentPlayerTime(newTime);

@@ -248,6 +248,18 @@ public class Plot extends PlotData {
 		}
 	}
 	
-	
-	
+	public long getRentTimeExtendAllowedAt() {
+
+		// how much time in percent?
+		double allowExtendAfterPercentTime = getPlotWorld().getConfig().getAllowRentExtendAfterPercentTime();
+		// how much time is that really?
+		long allowExtendAfterTime = (long) (getRentTime() * (allowExtendAfterPercentTime / 100));
+		// subtract that from the total, to know how much time is remaining
+		long allowExtendAtRemaining = getRentTime() - allowExtendAfterTime;
+		
+		// check if it's too soon to extend the rent time.
+		// Always allow in the last minute
+		allowExtendAtRemaining = Math.max(allowExtendAtRemaining, 60000);
+		return allowExtendAtRemaining;
+	}
 }

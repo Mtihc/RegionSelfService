@@ -17,6 +17,7 @@ sell_max_block_cost: 2
 
 rent_min_block_cost: 0
 rent_max_block_cost: 0.002
+allow_rent_extend_after_percent_time: 90
 
 max_regions_per_player: -1
 

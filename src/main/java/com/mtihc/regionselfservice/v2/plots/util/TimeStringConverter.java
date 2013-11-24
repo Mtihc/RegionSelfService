@@ -20,11 +20,14 @@ public class TimeStringConverter {
 		minutes = minutes % 60;
 		int days = (int) Math.floor(hours/24);
 		hours = hours % 24;
-//		long days = TimeUnit.MILLISECONDS.toDays(millisec);
-//		long hours = Math.max(0, TimeUnit.MILLISECONDS.toHours(millisec) - days * 24);
-//		long minutes = Math.max(0, TimeUnit.MILLISECONDS.toMinutes(millisec) - hours * 60);
+		
+		
 		String result = days + "d" + hours + "h" + minutes + "m";
-		return result.replaceAll("0[dhm]", "");
+		result = result.replaceAll("0[dhm]", "");
+		if(result.isEmpty()) {
+			result = "0m";
+		}
+		return result;
 	}
 	
 	public long convert(String timeString) {
