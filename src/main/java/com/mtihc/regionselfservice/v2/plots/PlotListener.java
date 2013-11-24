@@ -164,7 +164,7 @@ class PlotListener implements Listener {
 			}
 			else if(rentCost > maxRentCostConverted) {
 				player.sendMessage(ChatColor.RED + "The price is too high.");
-				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCostConverted) + " and " + mgr.getEconomy().format(maxRentCostConverted) + ".");
+				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCostConverted) + " and " + mgr.getEconomy().format(maxRentCostConverted) + " per "+rentTimeString+".");
 				player.sendMessage(ChatColor.RED + "In other words, between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + " per hour.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
