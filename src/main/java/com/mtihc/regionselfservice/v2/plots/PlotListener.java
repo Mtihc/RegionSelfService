@@ -142,26 +142,30 @@ class PlotListener implements Listener {
 			double rentCost = rentText.getRentCost();
 			long rentTimeOld = plot.getRentTime();
 			long rentTime = rentText.getRentTime();
+			String rentTimeString = new TimeStringConverter().convert(rentTime);
 			
 			rentText.applyToSign(event);
 			
 			// check min/max cost
 			double minRentCost = plot.getWorth(config.getOnRentMinBlockCost());
 			double maxRentCost = plot.getWorth(config.getOnRentMaxBlockCost());
-			if(rentCost < minRentCost) {
+			// interpret the min/max rent cost as "rent cost per hour"
+			// convert them to min/max rent cost as "rent cost per rentTime"
+			double maxRentCostConverted = maxRentCost * (rentTime / 3600000);
+			double minRentCostConverted = minRentCost * (rentTime / 3600000);
+			
+			if(rentCost < minRentCostConverted) {
 				player.sendMessage(ChatColor.RED + "The price is too low.");
-				// TODO The rent-price must be between minRentCost per minRentTime and maxRentCost per maxRentTime.
-				// So we need to add time to the config. Orrrr interpret the min/max rent cost as "rent cost per hour"
-				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
+				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCostConverted) + " and " + mgr.getEconomy().format(maxRentCostConverted) + " per "+rentTimeString+".");
+				player.sendMessage(ChatColor.RED + "In other words, between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + " per hour.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
 				return;
 			}
-			else if(rentCost > maxRentCost) {
+			else if(rentCost > maxRentCostConverted) {
 				player.sendMessage(ChatColor.RED + "The price is too high.");
-				// TODO The rent-price must be between minRentCost per minRentTime and maxRentCost per maxRentTime.
-				// So we need to add time to the config. Orrrr interpret the min/max rent cost as "rent cost per hour"
-				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + ".");
+				player.sendMessage(ChatColor.RED + "The rent-price must be between " + mgr.getEconomy().format(minRentCostConverted) + " and " + mgr.getEconomy().format(maxRentCostConverted) + ".");
+				player.sendMessage(ChatColor.RED + "In other words, between " + mgr.getEconomy().format(minRentCost) + " and " + mgr.getEconomy().format(maxRentCost) + " per hour.");
 				event.setCancelled(true);
 				sign.getBlock().breakNaturally();
 				return;
@@ -186,7 +190,7 @@ class PlotListener implements Listener {
 			mgr.messages.upForRent(player, 
 					region.getOwners().getPlayers(), 
 					region.getMembers().getPlayers(), 
-					region.getId(), rentCost, new TimeStringConverter().convert(rentTime));
+					region.getId(), rentCost, rentTimeString);
 		}
 		else if(type == PlotSignType.FOR_SALE) {
 			
