@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -151,8 +152,8 @@ class PlotListener implements Listener {
 			double maxRentCost = plot.getWorth(config.getOnRentMaxBlockCost());
 			// interpret the min/max rent cost as "rent cost per hour"
 			// convert them to min/max rent cost as "rent cost per rentTime"
-			double maxRentCostConverted = maxRentCost * (rentTime / 3600000);
-			double minRentCostConverted = minRentCost * (rentTime / 3600000);
+			double maxRentCostConverted = maxRentCost * (rentTime / 3600000.0);
+			double minRentCostConverted = minRentCost * (rentTime / 3600000.0);
 			
 			if(rentCost < minRentCostConverted) {
 				player.sendMessage(ChatColor.RED + "The price is too low.");

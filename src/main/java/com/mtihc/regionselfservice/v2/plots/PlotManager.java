@@ -18,10 +18,12 @@ import com.mtihc.regionselfservice.v2.plots.signs.ForRentSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.ForSaleSignData;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignText.ForRentSignText;
 import com.mtihc.regionselfservice.v2.plots.signs.PlotSignType;
+import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.databases.ProtectionDatabaseException;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public abstract class PlotManager {
 
@@ -78,6 +80,9 @@ public abstract class PlotManager {
 							plot = new Plot(plotWorld, plot);
 						}
 						
+						ProtectedRegion region = ((Plot)plot).getRegion();
+						String rentTimeString = new TimeStringConverter().convert(plot.getRentTime());
+						
 						Collection<IPlotSignData> rentSigns = plot.getSigns(PlotSignType.FOR_RENT);
 						// iterate over all signs
 						for (IPlotSignData plotSign : rentSigns) {
@@ -99,12 +104,21 @@ public abstract class PlotManager {
 								// time is up
 								newTime = 0;
 								
+								
 								// remove region member
-								((Plot)plot).getRegion().getMembers().removePlayer(rentSign.getRentPlayer());
+								region.getMembers().removePlayer(rentSign.getRentPlayer());
 								requireSave = true;
+								
+								// get player, if online
+								messages.rent_ended(
+										rentSign.getRentPlayer(), 
+										region.getOwners().getPlayers(), 
+										region.getMembers().getPlayers(), 
+										plot.getRegionId(), 
+										rentTimeString);
+								
 								// remove player name from sign
 								rentSign.setRentPlayer(null);
-								rentSign.setRentPlayerTime(newTime);
 								
 							}
 							// update time on the sign data

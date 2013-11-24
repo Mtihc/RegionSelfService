@@ -3,6 +3,7 @@ package com.mtihc.regionselfservice.v2.plots;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -127,6 +128,34 @@ public class Messages {
            if(tax != 0) {
                    sender.sendMessage(ChatColor.WHITE + taxAccount + ChatColor.GREEN + " received the tax of " + ChatColor.WHITE + format(tax) + ChatColor.GREEN + ".");
            }
+   }
+   
+   public void rent_ended(String renterName, Set<String> owners, Set<String> members, String regionId, String timeString) {
+	   Player renter = Bukkit.getPlayer(renterName);
+	   if(renter != null) {
+		   renter.sendMessage(ChatColor.RED + "The rent time of " + timeString + " has passed. You are no longer a member of region \"" + regionId + "\".");
+	   }
+	   String permOwner = Permission.INFORM_OWNER_RENTED;
+       String permMember = Permission.INFORM_MEMBER_RENTED;
+       String msg = ChatColor.RED + "Player " + renterName + "'s rent time of "+timeString+" has passed. "+renterName+" is no longer a member of region \"" + regionId + "\".";
+       if(owners != null) {
+    	   for (String name : owners) {
+               Player owner = Bukkit.getPlayerExact(name);
+               if(owner == null || !owner.isOnline() || !owner.hasPermission(permOwner) || owner.getName().equalsIgnoreCase(renterName)) {
+                       continue;
+               }
+               owner.sendMessage(msg);
+    	   }
+       }
+       if(members != null) {
+           for (String name : members) {
+               Player member = Bukkit.getPlayerExact(name);
+               if(member == null || !member.isOnline() || !member.hasPermission(permMember) || member.getName().equalsIgnoreCase(renterName)) {
+                       continue;
+               }
+               member.sendMessage(msg);
+           }
+       }
    }
    
    public void rented(CommandSender renter, Set<String> owners, Set<String> members, String regionId, double cost, String time) {

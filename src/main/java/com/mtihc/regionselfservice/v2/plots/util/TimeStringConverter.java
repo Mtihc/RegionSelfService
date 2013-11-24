@@ -14,9 +14,15 @@ public class TimeStringConverter {
 		if(millisec <= 0) {
 			return "0m";
 		}
-		long days = TimeUnit.MILLISECONDS.toDays(millisec);
-		long hours = TimeUnit.MILLISECONDS.toHours(millisec) - days * 24;
-		long minutes = TimeUnit.MILLISECONDS.toMinutes(millisec) - hours * 60 * 24;
+		
+		int minutes = (int) Math.floor(millisec/60000);
+		int hours = (int) Math.floor(minutes/60);
+		minutes = minutes % 60;
+		int days = (int) Math.floor(hours/24);
+		hours = hours % 24;
+//		long days = TimeUnit.MILLISECONDS.toDays(millisec);
+//		long hours = Math.max(0, TimeUnit.MILLISECONDS.toHours(millisec) - days * 24);
+//		long minutes = Math.max(0, TimeUnit.MILLISECONDS.toMinutes(millisec) - hours * 60);
 		String result = days + "d" + hours + "h" + minutes + "m";
 		return result.replaceAll("0[dhm]", "");
 	}
