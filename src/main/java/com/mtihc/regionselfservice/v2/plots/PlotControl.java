@@ -83,6 +83,7 @@ public class PlotControl {
 	
 	private static final HashSet<Byte> invisibleBlocks = new HashSet<Byte>();
 	
+	@SuppressWarnings("deprecation")
 	public static HashSet<Byte> getInvisibleBlocks() {
 		if(invisibleBlocks.isEmpty()) {
 			invisibleBlocks.add((byte) Material.AIR.getId());
@@ -96,6 +97,7 @@ public class PlotControl {
 		return invisibleBlocks;
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static Sign getTargetSign(Player player) {
 		// get targeted block
 		Block block = player.getTargetBlock(getInvisibleBlocks(), 8);
