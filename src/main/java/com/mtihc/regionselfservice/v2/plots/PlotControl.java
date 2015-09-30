@@ -33,8 +33,8 @@ import com.sk89q.worldedit.bukkit.selections.Selection;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.databases.ProtectionDatabaseException;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion.CircularInheritanceException;
@@ -303,7 +303,7 @@ public class PlotControl {
 				// save region owner changes
 				try {
 					plotWorld.getRegionManager().save();
-				} catch (ProtectionDatabaseException e) {
+				} catch (StorageException e) {
 					String msg = "Failed to save region changes to world \"" + plotWorld.getName() + "\", using WorldGuard.";
 					mgr.getPlugin().getLogger().log(Level.WARNING, ChatColor.RED + msg, e);
 				}
@@ -492,7 +492,7 @@ public class PlotControl {
 				// save region owner changes
 				try {
 					plotWorld.getRegionManager().save();
-				} catch (ProtectionDatabaseException e) {
+				} catch (StorageException e) {
 					String msg = "Failed to save region changes to world \"" + plotWorld.getName() + "\", using WorldGuard.";
 					mgr.getPlugin().getLogger().log(Level.WARNING, ChatColor.RED + msg, e);
 				}
@@ -792,7 +792,7 @@ public class PlotControl {
 				try {
 					regionManager.addRegion(region);
 					regionManager.save();
-				} catch (ProtectionDatabaseException e) {
+				} catch (StorageException e) {
 					player.sendMessage(ChatColor.RED + "Failed to save new region with id \"" + region.getId() + "\": " + e.getMessage());
 					return Prompt.END_OF_CONVERSATION;
 				}
@@ -999,7 +999,7 @@ public class PlotControl {
 							oldWidth, oldLength, oldHeight, 
 							newWidth, newLength, newHeight);
 
-				} catch (ProtectionDatabaseException e) {
+				} catch (StorageException e) {
 					// i think your server has bigger problems
 					String msg = ChatColor.RED
 							+ "Failed to save new region with id \""
@@ -1175,7 +1175,7 @@ public class PlotControl {
 						// send messages to everyone involved
 						mgr.messages.removed(player, owners, members, plot.getRegionId(), refund);
 						
-					} catch (ProtectionDatabaseException e) {
+					} catch (StorageException e) {
 						player.sendMessage(ChatColor.RED + "Failed to delete region with id \"" + plot.getRegionId() + "\": " + e.getMessage());
 					}
 				}

@@ -24,7 +24,7 @@ import com.mtihc.regionselfservice.v2.plots.util.TimeStringConverter;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.protection.databases.ProtectionDatabaseException;
+import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public abstract class PlotManager {
@@ -152,7 +152,7 @@ public abstract class PlotManager {
 					if(requireSave) {
 						try {
 							plotWorld.getRegionManager().save();
-						} catch (ProtectionDatabaseException error) {
+						} catch (StorageException error) {
 							PlotManager.this.plugin.getLogger().log(
 									Level.SEVERE,
 									"Failed to remove member(s) that ran out of rent-time from region(s) in world \""+plotWorld.getName()+"\".", 
