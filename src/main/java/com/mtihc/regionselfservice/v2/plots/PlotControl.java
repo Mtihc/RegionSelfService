@@ -79,7 +79,6 @@ public class PlotControl {
 	    }
 	}
 	return count;
-	
     }
     
     private static final HashSet<Byte> invisibleBlocks = new HashSet<Byte>();

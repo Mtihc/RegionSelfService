@@ -30,9 +30,6 @@ public class SelfServicePlugin extends JavaPlugin {
 	return this.manager;
     }
     
-    /* (non-Javadoc)
-     * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
-     */
     @Override
     public void onEnable() {
 	WorldGuardPlugin worldGuard = setupWorldGuard();
@@ -52,9 +49,6 @@ public class SelfServicePlugin extends JavaPlugin {
 	this.cmd = new PlotCommand(this.manager, null, new String[] {"plot", "ss", "selfservice"});
     }
     
-    /* (non-Javadoc)
-     * @see org.bukkit.plugin.java.JavaPlugin#onCommand(org.bukkit.command.CommandSender, org.bukkit.command.Command, java.lang.String, java.lang.String[])
-     */
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 	
@@ -87,29 +81,19 @@ public class SelfServicePlugin extends JavaPlugin {
 	}
     }
     
-    /* (non-Javadoc)
-     * @see org.bukkit.plugin.java.JavaPlugin#getConfig()
-     */
     @Override
     public FileConfiguration getConfig() {
 	return this.config.getConfig();
     }
     
-    /* (non-Javadoc)
-     * @see org.bukkit.plugin.java.JavaPlugin#reloadConfig()
-     */
     @Override
     public void reloadConfig() {
 	this.config.reload();
 	
 	((PlotWorldConfig) this.manager.getDefaultWorldConfig()).reload();
 	this.manager.reloadWorlds();
-	
     }
     
-    /* (non-Javadoc)
-     * @see org.bukkit.plugin.java.JavaPlugin#saveConfig()
-     */
     @Override
     public void saveConfig() {
 	this.config.save();
@@ -131,6 +115,7 @@ public class SelfServicePlugin extends JavaPlugin {
 	Plugin vault = getServer().getPluginManager().getPlugin("Vault");
 	RegisteredServiceProvider<Economy> rsp = null;
 	Economy econ = null;
+	
 	if (vault != null) {
 	    rsp = getServer().getServicesManager().getRegistration(Economy.class);
 	    if (rsp != null) {
