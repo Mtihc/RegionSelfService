@@ -13,22 +13,57 @@ public class Messages {
     
     private IEconomy economy;
     
-    /**
-     * SOLD members Region "id" was sold to "buyer". You were member of that region. owners Region "id" was sold to "buyer". You were owner of that region. You are sharing "cost" with "owners". You
-     * all received an equal share of "share". buyer You bought region "id" for "cost" from "owners". RENTED members Region "id" was rented out to "renter" for "time". You are member of this region.
-     * owners Region "id" was rented out to "renter" for "time". You are owner of this region. You are sharing "cost" with "owners". You all received an equal share of "share". renter You rented
-     * region "id" for "time", for the price of "cost", from "owners". UPFORSALE members Player "seller" put region "id" up for sale, for "cost". You are member of this region. owners Player "seller"
-     * put region "id" up for sale, for "cost". You are owner of this region. If the region is sold, the profits are shared amongst "owners". seller You put region "id" up for sale, for "cost". If the
-     * region is sold, the profits are shared amongst "owners". UPFORRENT members Player "letter" put region "id" up for rent, for "cost" per "time". You are member of this region. owners Player
-     * "letter" put region "id" up for rent, for "cost" per "time". You are owner of this region. If the region is rented out, the profits are shared amongst "owners". letter You put region "id" up
-     * for rent, for "cost" per "time". If the region is rented out, the profits are shared amongst "owners". REMOVED members Player "remover" removed region "id". You were member of that region.
-     * owners Player "remover" removed region "id". You were owner of that region. You are sharing the refund of "refund" with "owners". You all received an equal share of "share". remover Region "id"
-     * removed. RESIZED (bigger) members Player "resizer" resized region "id" from "old-size" to "new-size". You are member of that region. owners Player "resizer" payed "cost" to resize region "id"
-     * from "old-size" to "new-size". You are owner of that region. resizer You payed "cost" to resize region "id" from "old-size" to "new-size". RESIZED (smaller) members Player "resizer" resized
-     * region "id" from "old-size" to "new-size". You are member of that region. owners Player "resizer" resized region "id" from "old-size" to "new-size". You are owner of that region. The region
-     * became smaller, so you are sharing the refund of "refund" with "owners". You all received an equal share of "share". resizer You payed "cost" to resize region "id" from "old-size" to
-     * "new-size". CREATE creator Region "id" protected. ...show region info....
+    // @formatter:off
+    /** Messages
+     *  SOLD members Region "id" was sold to "buyer".
+     *  You were member of that region.
+     *  owners Region "id" was sold to "buyer".
+     *  You were owner of that region.
+     *  You are sharing "cost" with "owners".
+     *  You all received an equal share of "share".
+     *  buyer You bought region "id" for "cost" from "owners".
+     *  RENTED members Region "id" was rented out to "renter" for "time".
+     *  You are member of this region.
+     *  owners Region "id" was rented out to "renter" for "time".
+     *  You are owner of this region. You are sharing "cost" with "owners".
+     *  You all received an equal share of "share".
+     *  renter You rented region "id" for "time", for the price of "cost", from "owners".
+     *  UPFORSALE members Player "seller" put region "id" up for sale, for "cost".
+     *  You are member of this region.
+     *  owners Player "seller" put region "id" up for sale, for "cost".
+     *  You are owner of this region.
+     *  If the region is sold, the profits are shared amongst "owners".
+     *  seller You put region "id" up for sale, for "cost".
+     *  If the region is sold, the profits are shared amongst "owners".
+     *  UPFORRENT members Player "letter" put region "id" up for rent, for "cost" per "time".
+     *  You are member of this region.
+     *  owners Player "letter" put region "id" up for rent, for "cost" per "time".
+     *  You are owner of this region.
+     *  If the region is rented out, the profits are shared amongst "owners".
+     *  letter You put region "id" up for rent, for "cost" per "time".
+     *  If the region is rented out, the profits are shared amongst "owners".
+     *  REMOVED members Player "remover" removed region "id".
+     *  You were member of that region.
+     *  owners Player "remover" removed region "id".
+     *  You were owner of that region.
+     *  You are sharing the refund of "refund" with "owners".
+     *  You all received an equal share of "share".
+     *  remover Region "id" removed. RESIZED (bigger) members Player "resizer" resized region "id" from "old-size" to "new-size".
+     *  You are member of that region.
+     *  owners Player "resizer" payed "cost" to resize region "id" from "old-size" to "new-size".
+     *  You are owner of that region.
+     *  resizer You payed "cost" to resize region "id" from "old-size" to "new-size".
+     *  RESIZED (smaller) members Player "resizer" resized region "id" from "old-size" to "new-size".
+     *  You are member of that region.
+     *  owners Player "resizer" resized region "id" from "old-size" to "new-size".
+     *  You are owner of that region.
+     *  The region became smaller, so you are sharing the refund of "refund" with "owners".
+     *  You all received an equal share of "share".
+     *  resizer You payed "cost" to resize region "id" from "old-size" to "new-size".
+     *  CREATE creator Region "id" protected. ...show region info....
      */
+    // @formatter:on
+    
     public Messages(IEconomy economy) {
 	this.economy = economy;
     }
