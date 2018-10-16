@@ -2,9 +2,8 @@ name: RegionSelfService
 author: Mtihc
 description: Make regions and let new people become owner
 main: com.mtihc.regionselfservice.v2.plugin.SelfServicePlugin
-depend: [WorldEdit, WorldGuard]
-softdepend: [Vault]
-version: 2.0 alpha
+depend: [Vault, WorldEdit, WorldGuard]
+version: 2.0.1a-SNAPSHOT
 commands:
     selfservice:
         description: For detailed information, execute /selfservice ?
